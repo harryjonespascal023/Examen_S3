@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS BNR_besoin(
     id_type_besoin INT NOT NULL,
     prix_unitaire DECIMAL(10,2) NOT NULL,
     quantity INT NOT NULL,
+    quantity_restante INT NOT NULL,
     FOREIGN KEY (id_ville) REFERENCES BNR_ville(id),
     FOREIGN KEY (id_type_besoin) REFERENCES BNR_type_besoin(id)
 );
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS BNR_don(
     id INT PRIMARY KEY AUTO_INCREMENT,
     id_type_besoin INT NOT NULL,
     quantity INT NOT NULL,
+    quantity_restante INT NOT NULL,
     date_saisie DATE NOT NULL,
     FOREIGN KEY (id_type_besoin) REFERENCES BNR_type_besoin(id)
 );
