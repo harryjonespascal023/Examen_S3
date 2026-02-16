@@ -18,6 +18,11 @@ class DonService
         return $this->donRepository->getAllTypesBesoin();
     }
 
+    public function getBesoinsDisponibles()
+    {
+        return $this->donRepository->getBesoinsDisponibles();
+    }
+
     public function dispatchDons()
     {
         $stats = [
@@ -117,7 +122,7 @@ class DonService
         }
     }
 
-    public function createDon($idTypeBesoin, $quantity, $dateSaisie = null)
+    public function createDon($idBesoin, $quantity, $dateSaisie = null)
     {
         if ($quantity <= 0) {
             throw new Exception("La quantité doit être supérieure à 0");
@@ -127,7 +132,7 @@ class DonService
             $dateSaisie = date('Y-m-d');
         }
 
-        return $this->donRepository->createDon($idTypeBesoin, $quantity, $dateSaisie);
+        return $this->donRepository->createDon($idBesoin, $quantity, $dateSaisie);
     }
 
     public function getAllDons()
