@@ -160,4 +160,12 @@ class DonService
 
         return $report;
     }
+
+     public function getDashboardData(): array
+    {
+        return [
+            'villes' => $this->donRepository->getVillesWithBesoinStats(),
+            'totaux' => $this->donRepository->getGlobalDonTotals(),
+        ];
+    }
 }

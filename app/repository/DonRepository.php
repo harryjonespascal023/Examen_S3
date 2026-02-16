@@ -132,4 +132,105 @@ class DonRepository
         $result = $this->db->query($query);
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getTypesBesoin(): array
+    {
+        $rows = $this->db->fetchAll('SELECT id, libelle FROM BNR_type_besoin ORDER BY id');
+        $types = [];
+        foreach ($rows as $row) {
+            $types[] = [
+                'id' => (int) $row->id,
+                'libelle' => (string) $row->libelle,
+            ];
+        }
+        return $types;
+    }
+
+    public function getVillesWithBesoinStats(): array
+    {
+        $types = $this->getTypesBesoin();
+
+        $statsRows = $this->db->fetchAll(
+            'SELECT
+                v.id AS ville_id,
+                v.nom AS ville_nom,
+                tb.id AS type_id,
+                tb.libelle AS type_libelle,
+                COALESCE(SUM(b.quantity), 0) AS besoin_qty,
+                COALESCE(SUM(b.quantity * b.prix_unitaire), 0) AS besoin_valeur,
+                COALESCE(SUM(dsp.quantity), 0) AS attribue_qty,
+                COALESCE(SUM(dsp.quantity * b.prix_unitaire), 0) AS attribue_valeur
+            FROM BNR_ville v
+            LEFT JOIN BNR_besoin b ON b.id_ville = v.id
+            LEFT JOIN BNR_type_besoin tb ON tb.id = b.id_type_besoin
+            LEFT JOIN BNR_dispatch dsp ON dsp.id_besoin = b.id
+            GROUP BY v.id, v.nom, tb.id, tb.libelle
+            ORDER BY v.id, tb.id'
+        );
+
+        $villes = [];
+        foreach ($statsRows as $row) {
+            $villeId = (int) $row->ville_id;
+            if (!isset($villes[$villeId])) {
+                $villes[$villeId] = [
+                    'id' => $villeId,
+                    'nom' => (string) $row->ville_nom,
+                    'types' => [],
+                ];
+
+                foreach ($types as $t) {
+                    $villes[$villeId]['types'][$t['libelle']] = [
+                        'besoin_qty' => 0,
+                        'attribue_qty' => 0,
+                        'restant_qty' => 0,
+                        'besoin_valeur' => 0.0,
+                        'attribue_valeur' => 0.0,
+                        'restant_valeur' => 0.0,
+                    ];
+                }
+            }
+
+            if ($row->type_libelle === null) {
+                continue;
+            }
+
+            $typeLibelle = (string) $row->type_libelle;
+            if (!isset($villes[$villeId]['types'][$typeLibelle])) {
+                $villes[$villeId]['types'][$typeLibelle] = [
+                    'besoin_qty' => 0,
+                    'attribue_qty' => 0,
+                    'restant_qty' => 0,
+                    'besoin_valeur' => 0.0,
+                    'attribue_valeur' => 0.0,
+                    'restant_valeur' => 0.0,
+                ];
+            }
+
+            $besoinQty = (int) $row->besoin_qty;
+            $attribueQty = (int) $row->attribue_qty;
+            $besoinValeur = (float) $row->besoin_valeur;
+            $attribueValeur = (float) $row->attribue_valeur;
+
+            $villes[$villeId]['types'][$typeLibelle]['besoin_qty'] = $besoinQty;
+            $villes[$villeId]['types'][$typeLibelle]['attribue_qty'] = $attribueQty;
+            $villes[$villeId]['types'][$typeLibelle]['restant_qty'] = max(0, $besoinQty - $attribueQty);
+            $villes[$villeId]['types'][$typeLibelle]['besoin_valeur'] = $besoinValeur;
+            $villes[$villeId]['types'][$typeLibelle]['attribue_valeur'] = $attribueValeur;
+            $villes[$villeId]['types'][$typeLibelle]['restant_valeur'] = max(0, $besoinValeur - $attribueValeur);
+        }
+
+        return array_values($villes);
+    }
+
+    public function getGlobalDonTotals(): array
+    {
+        $totalRecus = (int) $this->db->fetchField('SELECT COALESCE(SUM(quantity), 0) FROM BNR_don');
+        $totalAttribues = (int) $this->db->fetchField('SELECT COALESCE(SUM(quantity), 0) FROM BNR_dispatch');
+
+        return [
+            'total_recus' => $totalRecus,
+            'total_attribues' => $totalAttribues,
+            'total_reste' => max(0, $totalRecus - $totalAttribues),
+        ];
+    }
 }

@@ -89,4 +89,18 @@ class DonController
             ], 500);
         }
     }
+
+    public function dashboard(): void
+    {
+        $data = $this->donService->getDashboardData();
+
+        Flight::render('dashboard', [
+            'villes' => $data['villes'] ?? [],
+            'totaux' => $data['totaux'] ?? [
+                'total_recus' => 0,
+                'total_attribues' => 0,
+                'total_reste' => 0,
+            ],
+        ]);
+    }
 }
