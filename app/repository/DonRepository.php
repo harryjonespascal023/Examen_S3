@@ -28,11 +28,27 @@ class DonRepository
 
     public function getDonsNonUtilises()
     {
-        $query = "SELECT d.*, t.libelle as type_libelle 
+        $query = "SELECT d.*, b.libelle as besoin_libelle, b.id_type_besoin,
+                         v.nom as ville_nom, t.libelle as type_libelle 
                   FROM BNR_don d
-                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
+                  INNER JOIN BNR_besoin b ON d.id_besoin = b.id
+                  INNER JOIN BNR_ville v ON b.id_ville = v.id
+                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   WHERE d.quantity_restante > 0
                   ORDER BY d.date_saisie ASC, d.id ASC";
+        
+        $result = $this->db->query($query);
+        return $result->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getBesoinsDisponibles()
+    {
+        $query = "SELECT b.id, b.libelle, b.quantity_restante, v.nom as ville_nom, t.libelle as type_libelle 
+                  FROM BNR_besoin b
+                  INNER JOIN BNR_ville v ON b.id_ville = v.id
+                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
+                  WHERE b.quantity_restante > 0
+                  ORDER BY v.nom, b.libelle";
         
         $result = $this->db->query($query);
         return $result->fetchAll(PDO::FETCH_ASSOC);
@@ -79,14 +95,14 @@ class DonRepository
         ]);
     }
 
-    public function createDon($idTypeBesoin, $quantity, $dateSaisie)
+    public function createDon($idBesoin, $quantity, $dateSaisie)
     {
-        $query = "INSERT INTO BNR_don (id_type_besoin, quantity, quantity_restante, date_saisie) 
-                  VALUES (:id_type_besoin, :quantity, :quantity_restante, :date_saisie)";
+        $query = "INSERT INTO BNR_don (id_besoin, quantity, quantity_restante, date_saisie) 
+                  VALUES (:id_besoin, :quantity, :quantity_restante, :date_saisie)";
         
         $stmt = $this->db->prepare($query);
         $stmt->execute([
-            ':id_type_besoin' => $idTypeBesoin,
+            ':id_besoin' => $idBesoin,
             ':quantity' => $quantity,
             ':quantity_restante' => $quantity,
             ':date_saisie' => $dateSaisie
@@ -97,9 +113,11 @@ class DonRepository
 
     public function getAllDons()
     {
-        $query = "SELECT d.*, t.libelle as type_libelle 
+        $query = "SELECT d.*, b.libelle as besoin_libelle, v.nom as ville_nom, t.libelle as type_libelle 
                   FROM BNR_don d
-                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
+                  INNER JOIN BNR_besoin b ON d.id_besoin = b.id
+                  INNER JOIN BNR_ville v ON b.id_ville = v.id
+                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   ORDER BY d.date_saisie DESC";
         
         $result = $this->db->query($query);
@@ -112,13 +130,14 @@ class DonRepository
                     dp.*,
                     d.date_saisie as don_date,
                     d.quantity as don_quantity,
+                    b.libelle as besoin_libelle,
                     t.libelle as type_libelle,
                     b.quantity as besoin_quantity,
                     v.nom as ville_nom
                   FROM BNR_dispatch dp
                   INNER JOIN BNR_don d ON dp.id_don = d.id
                   INNER JOIN BNR_besoin b ON dp.id_besoin = b.id
-                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
+                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   INNER JOIN BNR_ville v ON b.id_ville = v.id
                   ORDER BY dp.date_dispatch DESC, dp.id DESC";
         

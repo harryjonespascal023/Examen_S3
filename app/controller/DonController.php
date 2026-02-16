@@ -21,6 +21,7 @@ class DonController
         $dons = $this->donService->getAllDons();
         $report = $this->donService->getReport();
         $typesBesoin = $this->donService->getAllTypesBesoin();
+        $besoins = $this->donService->getBesoinsDisponibles();
         $message = Flight::request()->query->message ?? null;
         $messageType = Flight::request()->query->type ?? 'info';
         
@@ -28,6 +29,7 @@ class DonController
             'dons' => $dons,
             'report' => $report,
             'typesBesoin' => $typesBesoin,
+            'besoins' => $besoins,
             'message' => $message,
             'messageType' => $messageType
         ]);
@@ -36,12 +38,12 @@ class DonController
     public function createForm()
     {
         try {
-            $idTypeBesoin = Flight::request()->data->id_type_besoin ?? null;
+            $idBesoin = Flight::request()->data->id_besoin ?? null;
             $quantity = Flight::request()->data->quantity ?? null;
             $dateSaisie = Flight::request()->data->date_saisie ?? date('Y-m-d');
 
-            if (!$idTypeBesoin || !$quantity) {
-                Flight::redirect('/dons?message=' . urlencode('Type de besoin et quantité requis') . '&type=danger');
+            if (!$idBesoin || !$quantity) {
+                Flight::redirect('/dons?message=' . urlencode('Besoin et quantité requis') . '&type=danger');
                 return;
             }
 
@@ -50,7 +52,7 @@ class DonController
                 return;
             }
 
-            $donId = $this->donService->createDon($idTypeBesoin, $quantity, $dateSaisie);
+            $donId = $this->donService->createDon($idBesoin, $quantity, $dateSaisie);
             Flight::redirect('/dons?message=' . urlencode('Don créé avec succès (ID: ' . $donId . ')') . '&type=success');
 
         } catch (Exception $e) {

@@ -25,56 +25,78 @@ sort($types);
 
 ?>
 
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="<?= htmlspecialchars(BASE_URL, ENT_QUOTES) ?>/assets/css/bootstrap.min.css">
-  </head>
-  <body class="bg-light">
-    <div class="container py-4">
+<?php include __DIR__ . '/includes/header.php'; ?>
+
+    <div class="page-header mb-4">
+        <h1 class="display-5 fw-bold">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </h1>
+        <p class="lead text-muted">Vue d'ensemble des dons et besoins par ville</p>
+    </div>
+
+    <div class="container">
       <h1 class="h3 mb-4">Dashboard</h1>
 
       <div class="row g-3 mb-4">
         <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="text-muted">Total dons reçus</div>
-              <div class="fs-4 fw-semibold"><?= (int) $totaux['total_recus'] ?></div>
+          <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="card-body text-center">
+              <i class="bi bi-inbox-fill" style="font-size: 2.5rem;"></i>
+              <div class="mt-2">
+                <div class="text-white-50 small">Total dons reçus</div>
+                <div class="fs-3 fw-bold"><?= (int) $totaux['total_recus'] ?></div>
+              </div>
             </div>
           </div>
         </div>
         <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="text-muted">Total dons attribués</div>
-              <div class="fs-4 fw-semibold"><?= (int) $totaux['total_attribues'] ?></div>
+          <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+            <div class="card-body text-center">
+              <i class="bi bi-check-circle-fill" style="font-size: 2.5rem;"></i>
+              <div class="mt-2">
+                <div class="text-white-50 small">Total dons attribués</div>
+                <div class="fs-3 fw-bold"><?= (int) $totaux['total_attribues'] ?></div>
+              </div>
             </div>
           </div>
         </div>
         <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="text-muted">Total dons restants</div>
-              <div class="fs-4 fw-semibold"><?= (int) $totaux['total_reste'] ?></div>
+          <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+            <div class="card-body text-center">
+              <i class="bi bi-box-seam-fill" style="font-size: 2.5rem;"></i>
+              <div class="mt-2">
+                <div class="text-white-50 small">Total dons restants</div>
+                <div class="fs-3 fw-bold"><?= (int) $totaux['total_reste'] ?></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card shadow-sm border-0">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <h5 class="mb-0">
+            <i class="bi bi-table"></i> Détail par Ville et Type
+          </h5>
+        </div>
         <div class="card-body">
           <div class="table-responsive">
-            <table class="table table-sm table-striped align-middle mb-0">
-              <thead>
+            <table class="table table-sm table-hover table-bordered align-middle mb-0">
+              <thead class="table-dark">
                 <tr>
-                  <th>Ville</th>
+                  <th><i class="bi bi-geo-alt-fill"></i> Ville</th>
                   <?php foreach ($types as $t): ?>
-                    <th class="text-end">Besoin (<?= htmlspecialchars($t, ENT_QUOTES) ?>)</th>
-                    <th class="text-end">Satisfait (<?= htmlspecialchars($t, ENT_QUOTES) ?>)</th>
-                    <th class="text-end">Restant (<?= htmlspecialchars($t, ENT_QUOTES) ?>)</th>
+                    <th class="text-end" colspan="3">
+                      <span class="badge bg-secondary"><?= htmlspecialchars($t, ENT_QUOTES) ?></span>
+                    </th>
+                  <?php endforeach; ?>
+                </tr>
+                <tr class="table-light">
+                  <th></th>
+                  <?php foreach ($types as $t): ?>
+                    <th class="text-end small">Besoin</th>
+                    <th class="text-end small">Satisfait</th>
+                    <th class="text-end small">Restant</th>
                   <?php endforeach; ?>
                 </tr>
               </thead>
@@ -86,17 +108,36 @@ sort($types);
                 <?php else: ?>
                   <?php foreach ($villes as $ville): ?>
                     <tr>
-                      <td><?= htmlspecialchars($ville['nom'] ?? '', ENT_QUOTES) ?></td>
+                      <td class="fw-bold">
+                        <i class="bi bi-geo-alt-fill text-danger"></i> 
+                        <?= htmlspecialchars($ville['nom'] ?? '', ENT_QUOTES) ?>
+                      </td>
                       <?php foreach ($types as $t):
                         $stats = $ville['types'][$t] ?? [
                           'besoin_qty' => 0,
                           'attribue_qty' => 0,
                           'restant_qty' => 0,
                         ];
+                        $besoin = (int) ($stats['besoin_qty'] ?? 0);
+                        $satisfait = (int) ($stats['attribue_qty'] ?? 0);
+                        $restant = (int) ($stats['restant_qty'] ?? 0);
+                        $pourcentage = $besoin > 0 ? ($satisfait / $besoin * 100) : 0;
                       ?>
-                        <td class="text-end"><?= (int) ($stats['besoin_qty'] ?? 0) ?></td>
-                        <td class="text-end"><?= (int) ($stats['attribue_qty'] ?? 0) ?></td>
-                        <td class="text-end"><?= (int) ($stats['restant_qty'] ?? 0) ?></td>
+                        <td class="text-end"><?= $besoin ?></td>
+                        <td class="text-end">
+                          <?php if ($satisfait > 0): ?>
+                            <span class="badge bg-success"><?= $satisfait ?></span>
+                          <?php else: ?>
+                            <?= $satisfait ?>
+                          <?php endif; ?>
+                        </td>
+                        <td class="text-end">
+                          <?php if ($restant > 0): ?>
+                            <span class="badge bg-warning text-dark"><?= $restant ?></span>
+                          <?php else: ?>
+                            <?= $restant ?>
+                          <?php endif; ?>
+                        </td>
                       <?php endforeach; ?>
                     </tr>
                   <?php endforeach; ?>
@@ -107,5 +148,5 @@ sort($types);
         </div>
       </div>
     </div>
-  </body>
-</html>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>

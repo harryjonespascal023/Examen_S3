@@ -1,50 +1,20 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historique des Dispatches - BNGRC</title>
-    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/bootstrap-icons/font/bootstrap-icons.min.css">
-</head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dons">
-                <i class="bi bi-heart-fill"></i> BNGRC - Gestion des Dons
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dons">
-                            <i class="bi bi-house-door"></i> Accueil
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/dons/history">
-                            <i class="bi bi-clock-history"></i> Historique
-                        </a>
-                    </li>
-                </ul>
+<?php include __DIR__ . '/../includes/header.php'; ?>
+
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold">
+                    <i class="bi bi-clock-history"></i> Historique des Dispatches
+                </h1>
+                <p class="lead text-muted">Suivi complet des distributions effectuées</p>
             </div>
+            <a href="/dons" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
         </div>
-    </nav>
+    </div>
 
     <div class="container">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h2><i class="bi bi-clock-history"></i> Historique des Dispatches</h2>
-                    <a href="/dons" class="btn btn-outline-danger">
-                        <i class="bi bi-arrow-left"></i> Retour
-                    </a>
-                </div>
-                <hr>
-            </div>
-        </div>
 
         <?php if (empty($history)): ?>
             <div class="row">
@@ -57,29 +27,37 @@
         <?php else: ?>
             <div class="row mb-3">
                 <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-primary text-white">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                             <h5 class="mb-0">
-                                <i class="bi bi-graph-up"></i> Statistiques
+                                <i class="bi bi-graph-up"></i> Statistiques Globales
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="row text-center">
                                 <div class="col-md-3">
-                                    <h3 class="text-primary"><?= count($history) ?></h3>
-                                    <p class="text-muted">Total Dispatches</p>
+                                    <div class="p-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                                        <h3 class="mb-0"><?= count($history) ?></h3>
+                                        <p class="mb-0 small">Total Dispatches</p>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <h3 class="text-success"><?= array_sum(array_column($history, 'quantity')) ?></h3>
-                                    <p class="text-muted">Unités Distribuées</p>
+                                    <div class="p-3" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border-radius: 10px; color: white;">
+                                        <h3 class="mb-0"><?= array_sum(array_column($history, 'quantity')) ?></h3>
+                                        <p class="mb-0 small">Unités Distribuées</p>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <h3 class="text-info"><?= count(array_unique(array_column($history, 'id_don'))) ?></h3>
-                                    <p class="text-muted">Dons Utilisés</p>
+                                    <div class="p-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 10px; color: white;">
+                                        <h3 class="mb-0"><?= count(array_unique(array_column($history, 'id_don'))) ?></h3>
+                                        <p class="mb-0 small">Dons Utilisés</p>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <h3 class="text-warning"><?= count(array_unique(array_column($history, 'id_besoin'))) ?></h3>
-                                    <p class="text-muted">Besoins Concernés</p>
+                                    <div class="p-3" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 10px; color: white;">
+                                        <h3 class="mb-0"><?= count(array_unique(array_column($history, 'id_besoin'))) ?></h3>
+                                        <p class="mb-0 small">Besoins Concernés</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -89,8 +67,8 @@
 
             <div class="row">
                 <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-success text-white">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                             <h5 class="mb-0">
                                 <i class="bi bi-list-ul"></i> Détail des Dispatches
                             </h5>
@@ -100,14 +78,14 @@
                                 <table class="table table-hover table-striped mb-0">
                                     <thead class="table-dark">
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Date Dispatch</th>
-                                            <th>Don</th>
-                                            <th>Date Don</th>
-                                            <th>Type</th>
-                                            <th>Besoin</th>
-                                            <th>Ville</th>
-                                            <th class="text-end">Quantité</th>
+                                            <th><i class="bi bi-hash"></i> ID</th>
+                                            <th><i class="bi bi-calendar-event"></i> Date Dispatch</th>
+                                            <th><i class="bi bi-box"></i> Don</th>
+                                            <th><i class="bi bi-calendar"></i> Date Don</th>
+                                            <th><i class="bi bi-card-text"></i> Besoin</th>
+                                            <th><i class="bi bi-tag"></i> Type</th>
+                                            <th><i class="bi bi-geo-alt"></i> Ville</th>
+                                            <th class="text-end"><i class="bi bi-box-seam"></i> Quantité</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -137,12 +115,13 @@
                                                     </small>
                                                 </td>
                                                 <td>
+                                                    <strong class="text-primary"><?= htmlspecialchars($dispatch['besoin_libelle']) ?></strong>
+                                                    <br><small class="text-muted">Besoin #<?= $dispatch['id_besoin'] ?></small>
+                                                </td>
+                                                <td>
                                                     <span class="badge bg-secondary">
                                                         <?= htmlspecialchars($dispatch['type_libelle']) ?>
                                                     </span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-warning text-dark">Besoin #<?= $dispatch['id_besoin'] ?></span>
                                                 </td>
                                                 <td>
                                                     <i class="bi bi-geo-alt-fill text-danger"></i> 
@@ -173,8 +152,8 @@
 
             <div class="row mt-4">
                 <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-info text-white">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                             <h6 class="mb-0"><i class="bi bi-box-seam"></i> Par Type de Besoin</h6>
                         </div>
                         <div class="card-body">
@@ -202,8 +181,8 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-warning text-dark">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                             <h6 class="mb-0"><i class="bi bi-geo-alt"></i> Par Ville</h6>
                         </div>
                         <div class="card-body">
@@ -233,12 +212,4 @@
         <?php endif; ?>
     </div>
 
-    <footer class="bg-dark text-white text-center py-3 mt-5">
-        <div class="container">
-            <p class="mb-0">Bureau National de Gestion des Risques et des Catastrophes - BNGRC &copy; <?= date('Y') ?></p>
-        </div>
-    </footer>
-
-    <script src="/assets/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
