@@ -24,6 +24,7 @@
 							<th scope="col">ID</th>
 							<th scope="col">Ville</th>
 							<th scope="col">Type</th>
+							<th scope="col">Libelle</th>
 							<th scope="col">Prix unitaire</th>
 							<th scope="col">Quantite</th>
 							<th scope="col">Restant</th>
@@ -36,6 +37,7 @@
 								<td><?php echo (int)$besoin->id; ?></td>
 								<td><?php echo htmlspecialchars((string)$besoin->ville_nom, ENT_QUOTES, 'UTF-8'); ?></td>
 								<td><?php echo htmlspecialchars((string)$besoin->type_libelle, ENT_QUOTES, 'UTF-8'); ?></td>
+								<td><?php echo htmlspecialchars((string)($besoin->libelle ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
 								<td><?php echo number_format((float)$besoin->prix_unitaire, 2, '.', ''); ?></td>
 								<td><?php echo (int)$besoin->quantity; ?></td>
 								<td><?php echo (int)$besoin->quantity_restante; ?></td>

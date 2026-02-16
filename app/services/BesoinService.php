@@ -23,14 +23,14 @@ class BesoinService
 		return $this->repository->find($id);
 	}
 
-	public function create(int $idVille, int $idType, float $prixUnitaire, int $quantity, int $quantityRestante): int
+	public function create(int $idVille, int $idType, float $prixUnitaire, int $quantity, int $quantityRestante, string $libelle): int
 	{
-		return $this->repository->create($idVille, $idType, $prixUnitaire, $quantity, $quantityRestante);
+		return $this->repository->create($idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle);
 	}
 
-	public function update(int $id, int $idVille, int $idType, float $prixUnitaire, int $quantity, int $quantityRestante): void
+	public function update(int $id, int $idVille, int $idType, float $prixUnitaire, int $quantity, int $quantityRestante, string $libelle): void
 	{
-		$this->repository->update($id, $idVille, $idType, $prixUnitaire, $quantity, $quantityRestante);
+		$this->repository->update($id, $idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle);
 	}
 
 	public function delete(int $id): void

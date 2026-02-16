@@ -7,6 +7,7 @@ $idTypeValue = 0;
 $prixUnitaireValue = 0;
 $quantityValue = 0;
 $quantityRestanteValue = 0;
+$libelleValue = '';
 
 if (!empty($besoin)) {
 	$idVilleValue = (int)$besoin->id_ville;
@@ -14,6 +15,7 @@ if (!empty($besoin)) {
 	$prixUnitaireValue = (float)$besoin->prix_unitaire;
 	$quantityValue = (int)$besoin->quantity;
 	$quantityRestanteValue = (int)$besoin->quantity_restante;
+	$libelleValue = (string)$besoin->libelle;
 } else {
 	$quantityRestanteValue = $quantityValue;
 }
@@ -64,6 +66,10 @@ if (!empty($besoin)) {
 					<div class="mb-3">
 						<label class="form-label" for="prix_unitaire">Prix unitaire</label>
 						<input class="form-control" id="prix_unitaire" name="prix_unitaire" type="number" step="0.01" min="0" required value="<?php echo htmlspecialchars((string)$prixUnitaireValue, ENT_QUOTES, 'UTF-8'); ?>">
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="libelle">Libelle</label>
+						<input class="form-control" id="libelle" name="libelle" type="text" required value="<?php echo htmlspecialchars($libelleValue, ENT_QUOTES, 'UTF-8'); ?>">
 					</div>
 					<div class="mb-3">
 						<label class="form-label" for="quantity">Quantite</label>

@@ -53,8 +53,9 @@ class BesoinController
 		$prixUnitaire = (float)($request->data->prix_unitaire ?? 0);
 		$quantity = (int)($request->data->quantity ?? 0);
 		$quantityRestante = (int)($request->data->quantity_restante ?? $quantity);
+		$libelle = trim((string)($request->data->libelle ?? ''));
 
-		$this->service()->create($idVille, $idType, $prixUnitaire, $quantity, $quantityRestante);
+		$this->service()->create($idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle);
 		Flight::redirect('/besoins');
 	}
 
@@ -87,8 +88,9 @@ class BesoinController
 		$prixUnitaire = (float)($request->data->prix_unitaire ?? 0);
 		$quantity = (int)($request->data->quantity ?? 0);
 		$quantityRestante = (int)($request->data->quantity_restante ?? $quantity);
+		$libelle = trim((string)($request->data->libelle ?? ''));
 
-		$this->service()->update((int)$id, $idVille, $idType, $prixUnitaire, $quantity, $quantityRestante);
+		$this->service()->update((int)$id, $idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle);
 		Flight::redirect('/besoins');
 	}
 

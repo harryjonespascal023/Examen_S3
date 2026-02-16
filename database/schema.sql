@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS BNR_besoin(
     prix_unitaire DECIMAL(10,2) NOT NULL,
     quantity INT NOT NULL,
     quantity_restante INT NOT NULL,
+    libelle VARCHAR(255) NOT NULL,
     FOREIGN KEY (id_ville) REFERENCES BNR_ville(id),
     FOREIGN KEY (id_type_besoin) REFERENCES BNR_type_besoin(id)
 );
