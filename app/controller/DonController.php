@@ -73,68 +73,6 @@ class DonController
             Flight::redirect('/dons?message=' . urlencode('Erreur dispatch: ' . $e->getMessage()) . '&type=danger');
         }
     }
-
-    public function create()
-    {
-        try {
-            $idTypeBesoin = Flight::request()->data->id_type_besoin ?? null;
-            $quantity = Flight::request()->data->quantity ?? null;
-            $dateSaisie = Flight::request()->data->date_saisie ?? date('Y-m-d');
-
-            // Validation
-            if (!$idTypeBesoin || !$quantity) {
-                Flight::json([
-                    'success' => false,
-                    'message' => 'Type de besoin et quantité requis'
-                ], 400);
-                return;
-            }
-
-            if ($quantity <= 0) {
-                Flight::json([
-                    'success' => false,
-                    'message' => 'La quantité doit être supérieure à 0'
-                ], 400);
-                return;
-            }
-
-            // Créer le don
-            $donId = $this->donService->createDon($idTypeBesoin, $quantity, $dateSaisie);
-
-            Flight::json([
-                'success' => true,
-                'message' => 'Don créé avec succès',
-                'don_id' => $donId
-            ], 201);
-
-        } catch (Exception $e) {
-            Flight::json([
-                'success' => false,
-                'message' => 'Erreur lors de la création du don : ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function dispatch()
-    {
-        try {
-            // Exécuter la logique de dispatch
-            $stats = $this->donService->dispatchDons();
-
-            Flight::json([
-                'success' => true,
-                'message' => 'Dispatch effectué avec succès',
-                'stats' => $stats
-            ], 200);
-
-        } catch (Exception $e) {
-            Flight::json([
-                'success' => false,
-                'message' => 'Erreur lors du dispatch : ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
     public function history()
     {
         try {
@@ -148,42 +86,6 @@ class DonController
             Flight::json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération de l\'historique : ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function report()
-    {
-        try {
-            $report = $this->donService->getReport();
-
-            Flight::json([
-                'success' => true,
-                'report' => $report
-            ], 200);
-
-        } catch (Exception $e) {
-            Flight::json([
-                'success' => false,
-                'message' => 'Erreur lors de la génération du rapport : ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function list()
-    {
-        try {
-            $dons = $this->donService->getAllDons();
-
-            Flight::json([
-                'success' => true,
-                'dons' => $dons
-            ], 200);
-
-        } catch (Exception $e) {
-            Flight::json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des dons : ' . $e->getMessage()
             ], 500);
         }
     }
