@@ -27,6 +27,7 @@ class ComposerStaticInit4b3a253f57d31d773b6986822b8dc6cf
         ),
         'A' => 
         array (
+            'App\\' => 4,
             'Ahc\\Cli\\' => 8,
         ),
     );
@@ -42,8 +43,12 @@ class ComposerStaticInit4b3a253f57d31d773b6986822b8dc6cf
         ),
         'Nette\\' => 
         array (
-            0 => __DIR__ . '/..' . '/nette/utils/src',
-            1 => __DIR__ . '/..' . '/nette/php-generator/src',
+            0 => __DIR__ . '/..' . '/nette/php-generator/src',
+            1 => __DIR__ . '/..' . '/nette/utils/src',
+        ),
+        'App\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/app',
         ),
         'Ahc\\Cli\\' => 
         array (
@@ -170,6 +175,9 @@ class ComposerStaticInit4b3a253f57d31d773b6986822b8dc6cf
         'Tracy\\OutputDebugger' => __DIR__ . '/..' . '/tracy/tracy/src/Tracy/OutputDebugger/OutputDebugger.php',
         'Tracy\\ProductionStrategy' => __DIR__ . '/..' . '/tracy/tracy/src/Tracy/Debugger/ProductionStrategy.php',
         'Tracy\\SessionStorage' => __DIR__ . '/..' . '/tracy/tracy/src/Tracy/Session/SessionStorage.php',
+        'app\\controller\\DonController' => __DIR__ . '/../..' . '/app/controller/DonController.php',
+        'app\\repository\\DonRepository' => __DIR__ . '/../..' . '/app/repository/DonRepository.php',
+        'app\\repository\\DonService' => __DIR__ . '/../..' . '/app/services/DonService.php',
         'flight\\debug\\database\\PdoQueryCapture' => __DIR__ . '/..' . '/flightphp/tracy-extensions/src/debug/database/PdoQueryCapture.php',
         'flight\\debug\\database\\PdoQueryCaptureStatement' => __DIR__ . '/..' . '/flightphp/tracy-extensions/src/debug/database/PdoQueryCaptureStatement.php',
         'flight\\debug\\tracy\\DatabaseExtension' => __DIR__ . '/..' . '/flightphp/tracy-extensions/src/debug/tracy/DatabaseExtension.php',

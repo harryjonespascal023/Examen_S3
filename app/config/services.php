@@ -71,7 +71,7 @@ Debugger::$strictMode = true; // Show all errors (set to E_ALL & ~E_DEPRECATED f
 // Debugger::$editor = 'vscode'; // Enable clickable file links in debug bar
 // Debugger::$email = 'your@email.com'; // Send error notifications
 if (Debugger::$showBar === true && php_sapi_name() !== 'cli') {
-  (new TracyExtensionLoader($app)); // Load FlightPHP Tracy extensions
+    (new TracyExtensionLoader($app)); // Load FlightPHP Tracy extensions
 }
 
 /**********************************************
