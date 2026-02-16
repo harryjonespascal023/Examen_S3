@@ -1,0 +1,13 @@
+{
+  "require": {
+    "flight/flight": "^2.0",
+    "ext-pdo": "*",
+    "ext-mbstring": "*",
+    "ext-fileinfo": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  }
+}
