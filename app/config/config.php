@@ -65,7 +65,7 @@ $app->set('csp_nonce', $nonce);
 return [
   'database' => [
     'host' => 'localhost:3306',
-    'dbname' => 'Takalo',
+    'dbname' => 'BNGRC',
     'user' => 'root',
     'password' => '',
   ],
