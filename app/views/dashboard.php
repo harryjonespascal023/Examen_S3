@@ -32,7 +32,8 @@ if (!isset($totaux)) {
       <p class="lead text-muted">Vue d'ensemble des dons et besoins par ville</p>
     </div>
     <div>
-      <form method="POST" action="<?= BASE_URL ?>/reinitialiser" onsubmit="return confirm('⚠️ ATTENTION : Cette action va supprimer TOUS les dispatches et réinitialiser TOUTES les quantités restantes. Cette opération est IRRÉVERSIBLE. Voulez-vous vraiment continuer ?');">
+      <form method="POST" action="<?= BASE_URL ?>/reinitialiser"
+        onsubmit="return confirm('⚠️ ATTENTION : Cette action va supprimer TOUS les dispatches et réinitialiser TOUTES les quantités restantes. Cette opération est IRRÉVERSIBLE. Voulez-vous vraiment continuer ?');">
         <button type="submit" class="btn btn-danger btn-lg">
           <i class="bi bi-arrow-clockwise"></i> Réinitialiser
         </button>
