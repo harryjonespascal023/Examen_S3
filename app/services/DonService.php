@@ -6,6 +6,7 @@ use app\repository\AchatRepository;
 use app\repository\BesoinRepository;
 use app\repository\DonRepository;
 use Exception;
+use Flight;
 
 class DonService
 {
@@ -384,19 +385,41 @@ class DonService
     return $this->donRepository->getRecapStatistics();
   }
 
+  /**
+   * Réinitialiser tous les dispatches et quantités restantes
+   * - Supprime tous les dispatches
+   * - Réinitialise les quantités restantes des dons à leur valeur initiale
+   * - Réinitialise les quantités restantes des besoins à leur valeur initiale
+   * - Réinitialise les achats
+   */
   public function reinitialiser()
   {
-      $besoinRepo = new BesoinRepository(\Flight::db());
-      $achatRepo = new AchatRepository(\Flight::db());
+    try {
+      $besoinRepo = new BesoinRepository(Flight::db());
+      $achatRepo = new AchatRepository(Flight::db());
+
       $this->donRepository->reinitialiserDispatch();
+
       $dons = $this->donRepository->getAllDons();
-      $besoins = $besoinRepo->all();
+
       foreach ($dons as $don) {
-          $this->donRepository->reinitialiserQuantite($don['id'], $don['quantite']);
+        $donId = is_array($don) ? $don['id'] : $don->id;
+        $quantity = is_array($don) ? $don['quantity'] : $don->quantity;
+        $this->donRepository->reinitialiserQuantite($donId, $quantity);
       }
+
+      // 4. Récupérer tous les besoins
+      $besoins = $besoinRepo->all();
+
       foreach ($besoins as $besoin) {
-          $besoinRepo->reinitialiserQuantite($besoin['id'], $besoin['quantite']);
+        $besoinId = is_array($besoin) ? $besoin['id'] : $besoin->id;
+        $quantity = is_array($besoin) ? $besoin['quantity'] : $besoin->quantity;
+        $besoinRepo->reinitialiserQuantite($besoinId, $quantity);
       }
       $achatRepo->reinitialiser();
+
+    } catch (Exception $e) {
+      throw new Exception("Erreur lors de la réinitialisation : " . $e->getMessage());
+    }
   }
 }

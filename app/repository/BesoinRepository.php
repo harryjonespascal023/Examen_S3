@@ -64,7 +64,7 @@ class BesoinRepository
 
   public function reinitialiserQuantite($id, $quantite): void
   {
-      $sql = $this->pdo->prepare("UPDATE BNR_besoin SET quantite_restante = ? WHERE id = ?");
+      $sql = $this->pdo->prepare("UPDATE BNR_besoin SET quantity_restante = ? WHERE id = ?");
       $sql->execute([$quantite, $id]);
   }
 }

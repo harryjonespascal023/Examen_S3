@@ -52,3 +52,4 @@ Flight::route('POST /achats/update-frais', [AchatController::class, 'updateFrais
 Flight::route('POST /reinitialiser', [DonController::class, 'reinitialiser']);
 
 Flight::route('/', [DonController::class, 'dashboard']);
+Flight::route('/dashboard', [DonController::class, 'dashboard']);

@@ -374,14 +374,14 @@ class DonRepository
 
   public function reinitialiserDispatch()
   {
-      $sql = $this->db->prepare("TRUNCATE TABLE BNR_dispatch");
-      $sql->execute();
+    $sql = $this->db->prepare("TRUNCATE TABLE BNR_dispatch");
+    $sql->execute();
   }
 
   public function reinitialiserQuantite($id, $quantite)
   {
-      $sql = $this->db->prepare("UPDATE BNR_besoin SET quantite_restante = ? WHERE id = ?");
-      $sql->execute([$quantite, $id]);
+    $sql = $this->db->prepare("UPDATE BNR_don SET quantity_restante = ? WHERE id = ?");
+    $sql->execute([$quantite, $id]);
   }
 }
 
