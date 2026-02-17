@@ -251,4 +251,10 @@ class AchatRepository
 
     return $result && (int) $result['count'] > 0;
   }
+
+  public function reinitialiser()
+  {
+      $sql = $this->pdo->prepare("TRUNCATE TABLE BNR_achat");
+      $sql->execute();
+  }
 }

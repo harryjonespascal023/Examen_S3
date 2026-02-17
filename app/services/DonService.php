@@ -2,6 +2,8 @@
 
 namespace app\services;
 
+use app\repository\AchatRepository;
+use app\repository\BesoinRepository;
 use app\repository\DonRepository;
 use Exception;
 
@@ -380,5 +382,21 @@ class DonService
   public function getRecapStatistics(): array
   {
     return $this->donRepository->getRecapStatistics();
+  }
+
+  public function reinitialiser()
+  {
+      $besoinRepo = new BesoinRepository(\Flight::db());
+      $achatRepo = new AchatRepository(\Flight::db());
+      $this->donRepository->reinitialiserDispatch();
+      $dons = $this->donRepository->getAllDons();
+      $besoins = $besoinRepo->all();
+      foreach ($dons as $don) {
+          $this->donRepository->reinitialiserQuantite($don['id'], $don['quantite']);
+      }
+      foreach ($besoins as $besoin) {
+          $besoinRepo->reinitialiserQuantite($besoin['id'], $besoin['quantite']);
+      }
+      $achatRepo->reinitialiser();
   }
 }
