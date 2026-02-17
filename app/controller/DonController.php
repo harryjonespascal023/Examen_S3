@@ -177,4 +177,17 @@ class DonController
       ], 500);
     }
   }
+
+  /**
+   * Réinitialiser tous les dispatches et quantités
+   */
+  public function reinitialiser(): void
+  {
+    try {
+      $this->donService->reinitialiser();
+      Flight::redirect('/dashboard?message=' . urlencode('Réinitialisation effectuée avec succès : tous les dispatches ont été supprimés et les quantités réinitialisées') . '&type=success');
+    } catch (Exception $e) {
+      Flight::redirect('/dashboard?message=' . urlencode('Erreur lors de la réinitialisation : ' . $e->getMessage()) . '&type=danger');
+    }
+  }
 }

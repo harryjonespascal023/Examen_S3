@@ -49,4 +49,6 @@ Flight::route('GET /achats/besoins-restants', [AchatController::class, 'besoinsR
 Flight::route('POST /achats/create', [AchatController::class, 'create']);
 Flight::route('POST /achats/update-frais', [AchatController::class, 'updateFrais']);
 
+Flight::route('POST /reinitialiser', [DonController::class, 'reinitialiser']);
+
 Flight::route('/', [DonController::class, 'dashboard']);
