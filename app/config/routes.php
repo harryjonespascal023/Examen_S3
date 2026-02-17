@@ -21,7 +21,6 @@ Flight::route('POST /villes', [VilleController::class, 'store']);
 Flight::route('GET /villes/@id/edit', [VilleController::class, 'editForm']);
 Flight::route('POST /villes/@id/update', [VilleController::class, 'update']);
 Flight::route('POST /villes/@id/delete', [VilleController::class, 'delete']);
-
 Flight::route('GET /types-besoin', [TypeBesoinController::class, 'index']);
 Flight::route('GET /types-besoin/create', [TypeBesoinController::class, 'createForm']);
 Flight::route('POST /types-besoin', [TypeBesoinController::class, 'store']);
@@ -50,4 +49,7 @@ Flight::route('GET /achats/besoins-restants', [AchatController::class, 'besoinsR
 Flight::route('POST /achats/create', [AchatController::class, 'create']);
 Flight::route('POST /achats/update-frais', [AchatController::class, 'updateFrais']);
 
+Flight::route('POST /reinitialiser', [DonController::class, 'reinitialiser']);
+
 Flight::route('/', [DonController::class, 'dashboard']);
+Flight::route('/dashboard', [DonController::class, 'dashboard']);

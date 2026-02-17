@@ -173,7 +173,7 @@ class DonRepository
   {
     $query = "SELECT * FROM BNR_type_besoin ORDER BY libelle ASC";
     $result = $this->db->query($query);
-    return $result->fetchAll(PDO::FETCH_ASSOC);
+    return $result->fetchAll(PDO::FETCH_OBJ);
   }
 
   public function getTypesBesoin(): array
@@ -370,6 +370,18 @@ class DonRepository
       'total_restants_montant' => $totalRestants,
       'pourcentage_satisfait' => $totalBesoins > 0 ? ($totalSatisfaits / $totalBesoins * 100) : 0
     ];
+  }
+
+  public function reinitialiserDispatch()
+  {
+    $sql = $this->db->prepare("TRUNCATE TABLE BNR_dispatch");
+    $sql->execute();
+  }
+
+  public function reinitialiserQuantite($id, $quantite)
+  {
+    $sql = $this->db->prepare("UPDATE BNR_don SET quantity_restante = ? WHERE id = ?");
+    $sql->execute([$quantite, $id]);
   }
 }
 

@@ -15,11 +15,30 @@ if (!isset($totaux)) {
 
 <?php include __DIR__ . '/includes/header.php'; ?>
 
+<?php if (isset($_GET['message']) && $_GET['message']): ?>
+  <div class="alert alert-<?= htmlspecialchars($_GET['type'] ?? 'info') ?> alert-dismissible fade show" role="alert">
+    <strong><?= ($_GET['type'] ?? 'info') === 'success' ? 'Succès!' : 'Erreur!' ?></strong>
+    <?= htmlspecialchars($_GET['message']) ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<?php endif; ?>
+
 <div class="page-header mb-4">
-  <h1 class="display-5 fw-bold">
-    <i class="bi bi-speedometer2"></i> Dashboard
-  </h1>
-  <p class="lead text-muted">Vue d'ensemble des dons et besoins par ville</p>
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="display-5 fw-bold">
+        <i class="bi bi-speedometer2"></i> Tableau de bord
+      </h1>
+      <p class="lead text-muted">Vue d'ensemble des dons et besoins par ville</p>
+    </div>
+    <div>
+      <form method="POST" action="<?= BASE_URL ?>/reinitialiser">
+        <button type="submit" class="btn btn-danger btn-lg">
+          <i class="bi bi-arrow-clockwise"></i> Réinitialiser
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <div class="container-fluid">

@@ -65,9 +65,21 @@ class DonController
   public function dispatchForm()
   {
     try {
-      $stats = $this->donService->dispatchDons();
+      $mode = Flight::request()->data->mode ?? 'date';
+      $stats = $this->donService->dispatchDons($mode);
+
+      // Déterminer le label du mode
+      if ($mode === 'quantity') {
+        $modeLabel = 'quantité croissante';
+      } elseif ($mode === 'proportional') {
+        $modeLabel = 'proportionnel';
+      } else {
+        $modeLabel = 'date (FIFO)';
+      }
+
       $message = sprintf(
-        'Dispatch réussi: %d dispatches, %d unités dispatchées, %d besoins satisfaits',
+        'Dispatch réussi (%s): %d dispatches, %d unités dispatchées, %d besoins satisfaits',
+        $modeLabel,
         $stats['total_dispatches'],
         $stats['total_quantity_dispatched'],
         $stats['besoins_satisfaits']
@@ -93,13 +105,11 @@ class DonController
     ]);
   }
 
-  /**
-   * Exécute une simulation du dispatch
-   */
   public function simulate()
   {
     try {
-      $stats = $this->donService->simulateDispatch();
+      $mode = Flight::request()->data->mode ?? 'date';
+      $stats = $this->donService->simulateDispatch($mode);
 
       Flight::render('dons/simulation', [
         'message' => 'Simulation terminée avec succès',
@@ -174,6 +184,19 @@ class DonController
         'success' => false,
         'message' => 'Erreur lors de la récupération des statistiques : ' . $e->getMessage()
       ], 500);
+    }
+  }
+
+  /**
+   * Réinitialiser tous les dispatches et quantités
+   */
+  public function reinitialiser(): void
+  {
+    try {
+      $this->donService->reinitialiser();
+      Flight::redirect('/dashboard?message=' . urlencode('Réinitialisation effectuée avec succès : tous les dispatches ont été supprimés et les quantités réinitialisées') . '&type=success');
+    } catch (Exception $e) {
+      Flight::redirect('/dashboard?message=' . urlencode('Erreur lors de la réinitialisation : ' . $e->getMessage()) . '&type=danger');
     }
   }
 }
