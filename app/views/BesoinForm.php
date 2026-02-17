@@ -10,7 +10,7 @@ $prixUnitaireValue = 0;
 $quantityValue = 0;
 $quantityRestanteValue = 0;
 $libelleValue = '';
-$dateBesoinValue = date('Y-m-d');
+$dateBesoinValue = date('Y-m-d\TH:i');
 
 if (!empty($besoin)) {
   $idVilleValue = (int) $besoin->id_ville;
@@ -19,7 +19,7 @@ if (!empty($besoin)) {
   $quantityValue = (int) $besoin->quantity;
   $quantityRestanteValue = (int) $besoin->quantity_restante;
   $libelleValue = (string) ($besoin->libelle ?? '');
-  $dateBesoinValue = (string) ($besoin->date_besoin ?? date('Y-m-d'));
+  $dateBesoinValue = !empty($besoin->date_besoin) ? date('Y-m-d\TH:i', strtotime($besoin->date_besoin)) : date('Y-m-d\TH:i');
 } else {
   $quantityRestanteValue = $quantityValue;
 }
@@ -96,7 +96,7 @@ include __DIR__ . '/includes/header.php';
           <label class="form-label" for="date_besoin">
             <i class="bi bi-calendar-event"></i> Date du Besoin *
           </label>
-          <input class="form-control" id="date_besoin" name="date_besoin" type="date" required
+          <input class="form-control" id="date_besoin" name="date_besoin" type="datetime-local" required
             value="<?php echo htmlspecialchars($dateBesoinValue, ENT_QUOTES, 'UTF-8'); ?>">
           <small class="form-text text-muted">
             Plus la date est ancienne, plus le besoin sera prioritaire lors du dispatch
