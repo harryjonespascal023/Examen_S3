@@ -16,7 +16,7 @@ include __DIR__ . '/includes/header.php';
 <div class="page-header">
   <div class="d-flex align-items-center justify-content-between">
     <h1><i class="bi bi-tag-fill text-info"></i> <?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></h1>
-    <a class="btn btn-secondary" href="/types-besoin">
+    <a class="btn btn-secondary" href="<?= BASE_URL ?>/types-besoin">
       <i class="bi bi-arrow-left"></i> Retour
     </a>
   </div>
@@ -34,13 +34,13 @@ include __DIR__ . '/includes/header.php';
         </label>
         <input class="form-control" id="libelle" name="libelle" type="text" required
           value="<?php echo htmlspecialchars($libelleValue, ENT_QUOTES, 'UTF-8'); ?>"
-          placeholder="Ex: Eau, Nourriture, Vêtements, Médicaments...">
+          placeholder="Ex: Riz, Huile, Tôle, Clou, Argent, ...">
         <small class="form-text text-muted">
-          Le type de besoin sera utilisé pour catégoriser les besoins des différentes villes
+          Le type de besoin peut être : Riz, Huile (nature), Tôle, Clou (matériaux), Argent
         </small>
       </div>
       <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-        <a href="/types-besoin" class="btn btn-secondary">
+        <a href="<?= BASE_URL ?>/types-besoin" class="btn btn-secondary">
           <i class="bi bi-x-circle"></i> Annuler
         </a>
         <button class="btn btn-primary" type="submit">

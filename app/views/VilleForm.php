@@ -18,7 +18,7 @@ include __DIR__ . '/includes/header.php';
 <div class="page-header">
   <div class="d-flex align-items-center justify-content-between">
     <h1><i class="bi bi-geo-alt-fill text-danger"></i> <?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></h1>
-    <a class="btn btn-secondary" href="/villes">
+    <a class="btn btn-secondary" href="<?= BASE_URL ?>/villes">
       <i class="bi bi-arrow-left"></i> Retour
     </a>
   </div>
@@ -49,7 +49,7 @@ include __DIR__ . '/includes/header.php';
         </small>
       </div>
       <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-        <a href="/villes" class="btn btn-secondary">
+        <a href="<?= BASE_URL ?>/villes" class="btn btn-secondary">
           <i class="bi bi-x-circle"></i> Annuler
         </a>
         <button class="btn btn-primary" type="submit">

@@ -61,17 +61,17 @@ use Tracy\Debugger;
  *
  * For more options, see https://tracy.nette.org/en/configuration
  **********************************************/
-Debugger::enable(); // Auto-detects environment
-// Debugger::enable(Debugger::Development); // Explicitly set environment
-// Debugger::enable('23.75.345.200'); // Restrict debug bar to specific IPs
+// Force Development mode to always show detailed errors
+Debugger::enable(Debugger::Development); // Explicitly set to Development mode
 Debugger::$logDirectory = __DIR__ . $ds . '..' . $ds . 'log'; // Log directory
 Debugger::$strictMode = true; // Show all errors (set to E_ALL & ~E_DEPRECATED for less noise)
+Debugger::$showBar = true; // Force showing debug bar even on server
 // Debugger::$maxLen = 1000; // Max length of dumped variables (default: 150)
 // Debugger::$maxDepth = 5; // Max depth of dumped structures (default: 3)
 // Debugger::$editor = 'vscode'; // Enable clickable file links in debug bar
 // Debugger::$email = 'your@email.com'; // Send error notifications
 if (Debugger::$showBar === true && php_sapi_name() !== 'cli') {
-    (new TracyExtensionLoader($app)); // Load FlightPHP Tracy extensions
+  (new TracyExtensionLoader($app)); // Load FlightPHP Tracy extensions
 }
 
 /**********************************************
@@ -88,7 +88,16 @@ $dsn = 'mysql:host=' . $config['database']['host'] . ';dbname=' . $config['datab
 // Register Flight::db() service
 // In development, use PdoQueryCapture to log queries; in production, use PdoWrapper for performance.
 $pdoClass = Debugger::$showBar === true ? PdoQueryCapture::class : PdoWrapper::class;
-$app->register('db', PdoWrapper::class, [$dsn, 'root', '']);
+$app->register('db', $pdoClass, [
+  $dsn,
+  $config['database']['user'],
+  $config['database']['password'],
+  [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false
+  ]
+]);
 
 
 /**********************************************

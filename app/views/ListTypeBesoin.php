@@ -7,7 +7,7 @@ include __DIR__ . '/includes/header.php';
 <div class="page-header">
   <div class="d-flex align-items-center justify-content-between">
     <h1><i class="bi bi-tag-fill text-info"></i> Liste des Types de Besoins</h1>
-    <a class="btn btn-primary" href="/types-besoin/create">
+    <a class="btn btn-primary" href="<?= BASE_URL ?>/types-besoin/create">
       <i class="bi bi-plus-circle"></i> Ajouter un type
     </a>
   </div>
@@ -41,10 +41,11 @@ include __DIR__ . '/includes/header.php';
                   <strong><?php echo htmlspecialchars((string) $type->libelle, ENT_QUOTES, 'UTF-8'); ?></strong>
                 </td>
                 <td class="text-end">
-                  <a class="btn btn-sm btn-info" href="/types-besoin/<?php echo (int) $type->id; ?>/edit">
+                  <a class="btn btn-sm btn-info" href="<?= BASE_URL ?>/types-besoin/<?php echo (int) $type->id; ?>/edit">
                     <i class="bi bi-pencil"></i> Modifier
                   </a>
-                  <form class="d-inline" method="post" action="/types-besoin/<?php echo (int) $type->id; ?>/delete">
+                  <form class="d-inline" method="post"
+                    action="<?= BASE_URL ?>/types-besoin/<?php echo (int) $type->id; ?>/delete">
                     <button class="btn btn-sm btn-danger" type="submit">
                       <i class="bi bi-trash"></i> Supprimer
                     </button>

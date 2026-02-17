@@ -11,18 +11,6 @@ if (!isset($totaux)) {
   ];
 }
 
-$types = [];
-foreach ($villes as $ville) {
-  if (!isset($ville['types']) || !is_array($ville['types'])) {
-    continue;
-  }
-  foreach ($ville['types'] as $typeLibelle => $stats) {
-    $types[$typeLibelle] = true;
-  }
-}
-$types = array_keys($types);
-sort($types);
-
 ?>
 
 <?php include __DIR__ . '/includes/header.php'; ?>
@@ -34,9 +22,8 @@ sort($types);
   <p class="lead text-muted">Vue d'ensemble des dons et besoins par ville</p>
 </div>
 
-<div class="container">
-  <h1 class="h3 mb-4">Dashboard</h1>
-
+<div class="container-fluid">
+  <!-- Cartes de statistiques globales -->
   <div class="row g-3 mb-4">
     <div class="col-md-4">
       <div class="card border-0 shadow-sm h-100"
@@ -76,80 +63,108 @@ sort($types);
     </div>
   </div>
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-      <h5 class="mb-0">
-        <i class="bi bi-table"></i> Détail par Ville et Type
-      </h5>
-    </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-sm table-hover table-bordered align-middle mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th><i class="bi bi-geo-alt-fill"></i> Ville</th>
-              <?php foreach ($types as $t): ?>
-                <th class="text-end" colspan="3">
-                  <span class="badge bg-secondary"><?= htmlspecialchars($t, ENT_QUOTES) ?></span>
-                </th>
-              <?php endforeach; ?>
-            </tr>
-            <tr class="table-light">
-              <th></th>
-              <?php foreach ($types as $t): ?>
-                <th class="text-end small">Besoin</th>
-                <th class="text-end small">Satisfait</th>
-                <th class="text-end small">Restant</th>
-              <?php endforeach; ?>
-            </tr>
-          </thead>
-          <tbody>
-            <?php if (count($villes) === 0): ?>
-              <tr>
-                <td colspan="<?= 1 + (count($types) * 3) ?>" class="text-center text-muted py-4">Aucune donnée</td>
-              </tr>
+  <!-- Besoins et dons par ville -->
+  <?php foreach ($villes as $ville): ?>
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <h4 class="mb-0">
+          <i class="bi bi-geo-alt-fill"></i> <?= htmlspecialchars($ville['nom'], ENT_QUOTES) ?>
+          <small class="ms-3 opacity-75">(<?= $ville['nombre_sinistres'] ?> sinistrés)</small>
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Besoins -->
+          <div class="col-md-6">
+            <h5 class="text-primary mb-3">
+              <i class="bi bi-exclamation-triangle-fill"></i> Besoins
+            </h5>
+            <?php if (empty($ville['besoins'])): ?>
+              <p class="text-muted">Aucun besoin enregistré</p>
             <?php else: ?>
-              <?php foreach ($villes as $ville): ?>
-                <tr>
-                  <td class="fw-bold">
-                    <i class="bi bi-geo-alt-fill text-danger"></i>
-                    <?= htmlspecialchars($ville['nom'] ?? '', ENT_QUOTES) ?>
-                  </td>
-                  <?php foreach ($types as $t):
-                    $stats = $ville['types'][$t] ?? [
-                      'besoin_qty' => 0,
-                      'attribue_qty' => 0,
-                      'restant_qty' => 0,
-                    ];
-                    $besoin = (int) ($stats['besoin_qty'] ?? 0);
-                    $satisfait = (int) ($stats['attribue_qty'] ?? 0);
-                    $restant = (int) ($stats['restant_qty'] ?? 0);
-                    $pourcentage = $besoin > 0 ? ($satisfait / $besoin * 100) : 0;
-                    ?>
-                    <td class="text-end"><?= $besoin ?></td>
-                    <td class="text-end">
-                      <?php if ($satisfait > 0): ?>
-                        <span class="badge bg-success"><?= $satisfait ?></span>
-                      <?php else: ?>
-                        <?= $satisfait ?>
-                      <?php endif; ?>
-                    </td>
-                    <td class="text-end">
-                      <?php if ($restant > 0): ?>
-                        <span class="badge bg-warning text-dark"><?= $restant ?></span>
-                      <?php else: ?>
-                        <?= $restant ?>
-                      <?php endif; ?>
-                    </td>
-                  <?php endforeach; ?>
-                </tr>
-              <?php endforeach; ?>
+              <div class="list-group">
+                <?php foreach ($ville['besoins'] as $besoin): ?>
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                      <h6 class="mb-1">
+                        <span class="badge bg-info"><?= htmlspecialchars($besoin['type_libelle'], ENT_QUOTES) ?></span>
+                        <?= htmlspecialchars($besoin['libelle'] ?? '-', ENT_QUOTES) ?>
+                      </h6>
+                      <small
+                        class="text-muted"><?= $besoin['prix_unitaire'] !== null ? number_format((float) $besoin['prix_unitaire'], 2) . ' Ar' : '-' ?></small>
+                    </div>
+                    <div class="progress mt-2" style="height: 20px;">
+                      <?php
+                      $total = (int) $besoin['quantity'];
+                      $restant = (int) $besoin['quantity_restante'];
+                      $satisfait = $total - $restant;
+                      $pourcentage = $total > 0 ? ($satisfait / $total * 100) : 0;
+                      ?>
+                      <div class="progress-bar bg-success" role="progressbar" style="width: <?= $pourcentage ?>%"
+                        aria-valuenow="<?= $pourcentage ?>" aria-valuemin="0" aria-valuemax="100">
+                        <?= round($pourcentage) ?>%
+                      </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                      <small class="text-success"><i class="bi bi-check-circle"></i> <?= $satisfait ?> / <?= $total ?></small>
+                      <small class="text-danger"><i class="bi bi-x-circle"></i> Restant: <?= $restant ?></small>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
             <?php endif; ?>
-          </tbody>
-        </table>
+          </div>
+
+          <!-- Dons -->
+          <div class="col-md-6">
+            <h5 class="text-success mb-3">
+              <i class="bi bi-heart-fill"></i> Dons
+            </h5>
+            <?php if (empty($ville['dons'])): ?>
+              <p class="text-muted">Aucun don enregistré</p>
+            <?php else: ?>
+              <div class="list-group">
+                <?php foreach ($ville['dons'] as $don): ?>
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                      <h6 class="mb-1">
+                        <span class="badge bg-success"><?= htmlspecialchars($don['type_libelle'], ENT_QUOTES) ?></span>
+                        <?= htmlspecialchars($don['besoin_libelle'] ?? '-', ENT_QUOTES) ?>
+                      </h6>
+                      <small class="text-muted"><?= date('d/m/Y', strtotime($don['date_saisie'])) ?></small>
+                    </div>
+                    <div class="progress mt-2" style="height: 20px;">
+                      <?php
+                      $total = (int) $don['quantity'];
+                      $restant = (int) $don['quantity_restante'];
+                      $utilise = $total - $restant;
+                      $pourcentage = $total > 0 ? ($utilise / $total * 100) : 0;
+                      ?>
+                      <div class="progress-bar bg-info" role="progressbar" style="width: <?= $pourcentage ?>%"
+                        aria-valuenow="<?= $pourcentage ?>" aria-valuemin="0" aria-valuemax="100">
+                        <?= round($pourcentage) ?>%
+                      </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                      <small class="text-info"><i class="bi bi-arrow-right-circle"></i> Utilisé: <?= $utilise ?> /
+                        <?= $total ?></small>
+                      <small class="text-primary"><i class="bi bi-box"></i> Disponible: <?= $restant ?></small>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  <?php endforeach; ?>
+
+  <?php if (empty($villes)): ?>
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> Aucune donnée disponible
+    </div>
+  <?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -55,7 +55,7 @@
         style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
         <div class="card-body">
           <i class="bi bi-arrow-repeat" style="font-size: 3rem;"></i>
-          <form method="POST" action="/dons/dispatch" class="mt-2">
+          <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="mt-2">
             <button type="submit" class="btn btn-light btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
               Dispatch
             </button>
@@ -70,39 +70,49 @@
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-          <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Saisir un Don</h5>
+          <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Faire un Don</h5>
         </div>
         <div class="card-body">
-          <form method="POST" action="/dons/create">
+          <form method="POST" action="<?= BASE_URL ?>/dons/create">
             <div class="mb-3">
-              <label for="id_besoin" class="form-label">
-                <i class="bi bi-card-checklist"></i> Besoin à Satisfaire *
+              <label for="id_type_besoin" class="form-label">
+                <i class="bi bi-tag"></i> Catégorie *
               </label>
-              <select class="form-select" id="id_besoin" name="id_besoin" required>
-                <option value="">Sélectionner un besoin...</option>
-                <?php foreach ($besoins as $besoin): ?>
-                  <option value="<?= $besoin['id'] ?>">
-                    <?= htmlspecialchars($besoin['libelle']) ?> -
-                    <?= htmlspecialchars($besoin['ville_nom']) ?>
-                    (<?= htmlspecialchars($besoin['type_libelle']) ?>) -
-                    Restant: <?= $besoin['quantity_restante'] ?>
+              <select class="form-select" id="id_type_besoin" name="id_type_besoin" required>
+                <option value="">Sélectionner une catégorie...</option>
+                <?php foreach ($typesBesoin as $type): ?>
+                  <option value="<?= $type['id'] ?>" data-libelle="<?= htmlspecialchars(strtolower($type['libelle'])) ?>">
+                    <?= htmlspecialchars($type['libelle']) ?>
                   </option>
                 <?php endforeach; ?>
               </select>
               <small class="form-text text-muted">
-                Sélectionnez le besoin spécifique que vous souhaitez satisfaire
+                Nature (nourriture), Matériaux (construction), ou Argent (financier)
+              </small>
+            </div>
+            <div class="mb-3" id="libelleContainer">
+              <label for="libelle" class="form-label">
+                <i class="bi bi-box-seam"></i> Ce que vous donnez <span id="libelleRequired">*</span>
+              </label>
+              <input type="text" class="form-control" id="libelle" name="libelle"
+                placeholder="Ex: Riz, Eau, Huile, Ciment, etc.">
+              <small class="form-text text-muted" id="libelleHelp">
+                Précisez ce que vous donnez : Riz, Eau, Huile pour Nature ; Ciment, Tôles pour Matériaux
               </small>
             </div>
             <div class="mb-3">
               <label for="quantity" class="form-label">
-                <i class="bi bi-box"></i> Quantité *
+                <i class="bi bi-123"></i> Quantité *
               </label>
               <input type="number" class="form-control" id="quantity" name="quantity" min="1" required
                 placeholder="Entrer la quantité à donner">
+              <small class="form-text text-muted">
+                Pour l'argent, entrez le montant. Pour Nature/Matériaux, entrez la quantité (kg, L, unités, etc.)
+              </small>
             </div>
             <div class="mb-3">
               <label for="date_saisie" class="form-label">
-                <i class="bi bi-calendar-event"></i> Date de Saisie *
+                <i class="bi bi-calendar-event"></i> Date de Don *
               </label>
               <input type="date" class="form-control" id="date_saisie" name="date_saisie" value="<?= date('Y-m-d') ?>"
                 required>
@@ -116,6 +126,45 @@
           </form>
         </div>
       </div>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          const typeSelect = document.getElementById('id_type_besoin');
+          const libelleInput = document.getElementById('libelle');
+          const libelleContainer = document.getElementById('libelleContainer');
+          const libelleRequired = document.getElementById('libelleRequired');
+          const libelleHelp = document.getElementById('libelleHelp');
+
+          function updateFields() {
+            const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+            const typeLibelle = selectedOption ? selectedOption.getAttribute('data-libelle') : '';
+
+            if (typeLibelle === 'argent') {
+              // Pour l'argent, masquer le libellé
+              libelleInput.required = false;
+              libelleContainer.style.display = 'none';
+            } else {
+              // Pour Nature et Matériaux, afficher le libellé
+              libelleInput.required = true;
+              libelleContainer.style.display = '';
+
+              if (typeLibelle === 'nature') {
+                libelleInput.placeholder = 'Ex: Riz, Eau, Huile, Légumes, etc.';
+                libelleHelp.textContent = 'Précisez le produit alimentaire que vous donnez';
+              } else if (typeLibelle === 'matériaux' || typeLibelle === 'materiaux') {
+                libelleInput.placeholder = 'Ex: Ciment, Tôles, Bois, Clous, etc.';
+                libelleHelp.textContent = 'Précisez le matériau de construction que vous donnez';
+              } else {
+                libelleInput.placeholder = 'Ex: Riz, Eau, Huile, Ciment, etc.';
+                libelleHelp.textContent = 'Précisez ce que vous donnez';
+              }
+            }
+          }
+
+          typeSelect.addEventListener('change', updateFields);
+          updateFields();
+        });
+      </script>
     </div>
 
     <div class="col-md-6">
@@ -134,16 +183,23 @@
                 <div class="list-group-item border-0 border-bottom">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 class="mb-1 fw-bold"><?= htmlspecialchars($besoin['libelle']) ?></h6>
+                      <h6 class="mb-1 fw-bold">
+                        <?= $besoin['libelle'] == null ? "💰 Besoin en Argent" : htmlspecialchars($besoin['libelle']) ?>
+                      </h6>
                       <p class="mb-1 text-muted small">
                         <i class="bi bi-geo-alt-fill text-danger"></i> <?= htmlspecialchars($besoin['ville_nom']) ?>
                       </p>
                       <small class="badge bg-secondary"><?= htmlspecialchars($besoin['type_libelle']) ?></small>
                       <small class="text-muted ms-2">Besoin #<?= $besoin['id'] ?></small>
+                      <br>
+                      <small class="text-info">
+                        <i class="bi bi-calendar-event"></i>
+                        Depuis: <?= date('d/m/Y', strtotime($besoin['date_besoin'])) ?>
+                      </small>
                     </div>
                     <span class="badge rounded-pill fs-6"
                       style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                      <?= $besoin['quantity_restante'] ?> unités
+                      <?= $besoin['quantity_restante'] ?>     <?= $besoin['prix_unitaire'] === null ? '€' : 'unités' ?>
                     </span>
                   </div>
                 </div>
@@ -172,17 +228,17 @@
                 <div class="list-group-item border-0 border-bottom">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 class="mb-1 fw-bold"><?= htmlspecialchars($don['besoin_libelle']) ?></h6>
-                      <p class="mb-1 text-muted small">
-                        <i class="bi bi-geo-alt-fill text-danger"></i> <?= htmlspecialchars($don['ville_nom']) ?>
-                      </p>
-                      <small class="badge bg-secondary"><?= htmlspecialchars($don['type_libelle']) ?></small>
+                      <h6 class="mb-1 fw-bold">
+                        <?= $don['libelle'] ? htmlspecialchars($don['libelle']) : '💰 Argent' ?>
+                      </h6>
+                      <small class="badge bg-success"><?= htmlspecialchars($don['type_libelle']) ?></small>
                       <small class="text-muted ms-2"><i class="bi bi-calendar"></i>
                         <?= date('d/m/Y', strtotime($don['date_saisie'])) ?></small>
+                      <small class="text-muted ms-2">Don #<?= $don['id'] ?></small>
                     </div>
                     <span class="badge rounded-pill fs-6"
                       style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                      <?= $don['quantity_restante'] ?> / <?= $don['quantity'] ?>
+                      <?= $don['quantity_restante'] ?>     <?= $don['libelle'] ? 'unités' : '€' ?>
                     </span>
                   </div>
                 </div>
@@ -209,7 +265,7 @@
                 <thead class="table-light">
                   <tr>
                     <th><i class="bi bi-hash"></i></th>
-                    <th><i class="bi bi-card-text"></i> Besoin</th>
+                    <th><i class="bi bi-tag"></i> Type</th>
                     <th><i class="bi bi-box"></i> Qté</th>
                     <th><i class="bi bi-box-arrow-left"></i> Rest.</th>
                     <th><i class="bi bi-calendar"></i> Date</th>
@@ -223,7 +279,6 @@
                     <tr>
                       <td><span class="badge bg-primary"><?= $don['id'] ?></span></td>
                       <td>
-                        <small class="fw-bold d-block"><?= htmlspecialchars($don['besoin_libelle']) ?></small>
                         <small class="badge bg-secondary"><?= htmlspecialchars($don['type_libelle']) ?></small>
                       </td>
                       <td><?= $don['quantity'] ?></td>

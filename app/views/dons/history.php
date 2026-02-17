@@ -8,7 +8,7 @@
       </h1>
       <p class="lead text-muted">Suivi complet des distributions effectuées</p>
     </div>
-    <a href="/dons" class="btn btn-outline-primary">
+    <a href="<?= BASE_URL ?>/dons" class="btn btn-outline-primary">
       <i class="bi bi-arrow-left"></i> Retour
     </a>
   </div>
@@ -84,9 +84,9 @@
                   <tr>
                     <th><i class="bi bi-hash"></i> ID</th>
                     <th><i class="bi bi-calendar-event"></i> Date Dispatch</th>
-                    <th><i class="bi bi-box"></i> Don</th>
+                    <th><i class="bi bi-box"></i> Don (Libellé)</th>
                     <th><i class="bi bi-calendar"></i> Date Don</th>
-                    <th><i class="bi bi-card-text"></i> Besoin</th>
+                    <th><i class="bi bi-card-text"></i> Besoin (Libellé)</th>
                     <th><i class="bi bi-tag"></i> Type</th>
                     <th><i class="bi bi-geo-alt"></i> Ville</th>
                     <th class="text-end"><i class="bi bi-box-seam"></i> Quantité</th>
@@ -111,7 +111,8 @@
                       <td><span class="badge bg-primary">#<?= $dispatch['id'] ?></span></td>
                       <td><?= date('H:i', strtotime($dispatch['date_dispatch'])) ?></td>
                       <td>
-                        <span class="badge bg-info">Don #<?= $dispatch['id_don'] ?></span>
+                        <strong><?= htmlspecialchars($dispatch['don_libelle'] ?? '💰 Argent') ?></strong>
+                        <br><small class="text-muted">Don #<?= $dispatch['id_don'] ?></small>
                       </td>
                       <td>
                         <small class="text-muted">
@@ -119,7 +120,8 @@
                         </small>
                       </td>
                       <td>
-                        <strong class="text-primary"><?= htmlspecialchars($dispatch['besoin_libelle']) ?></strong>
+                        <strong
+                          class="text-primary"><?= htmlspecialchars($dispatch['besoin_libelle'] ?? '💰 Argent') ?></strong>
                         <br><small class="text-muted">Besoin #<?= $dispatch['id_besoin'] ?></small>
                       </td>
                       <td>
@@ -132,7 +134,9 @@
                         <?= htmlspecialchars($dispatch['ville_nom']) ?>
                       </td>
                       <td class="text-end">
-                        <span class="badge bg-success fs-6"><?= $dispatch['quantity'] ?></span>
+                        <span class="badge bg-success fs-6">
+                          <?= $dispatch['quantity'] ?>     <?= ($dispatch['don_libelle'] ?? false) ? 'unités' : '€' ?>
+                        </span>
                       </td>
                     </tr>
                   <?php endforeach; ?>

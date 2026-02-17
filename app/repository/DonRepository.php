@@ -13,6 +13,10 @@ class DonRepository
     $this->db = $db;
   }
 
+  /**
+   * Récupère les besoins non satisfaits, triés par ancienneté (FIFO)
+   * Les besoins les plus anciens sont traités en premier
+   */
   public function getBesoinsNonSatisfaits()
   {
     $query = "SELECT b.*, v.nom as ville_nom, t.libelle as type_libelle
@@ -20,20 +24,21 @@ class DonRepository
                   INNER JOIN BNR_ville v ON b.id_ville = v.id
                   INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   WHERE b.quantity_restante > 0
-                  ORDER BY b.id ASC";
+                  ORDER BY b.date_besoin ASC, b.id ASC";
 
     $result = $this->db->query($query);
     return $result->fetchAll(PDO::FETCH_ASSOC);
   }
 
+  /**
+   * Récupère les dons non utilisés totalement, triés par date de saisie (FIFO)
+   * Avec libellé pour matching précis avec les besoins
+   */
   public function getDonsNonUtilises()
   {
-    $query = "SELECT d.*, b.libelle as besoin_libelle, b.id_type_besoin,
-                         v.nom as ville_nom, t.libelle as type_libelle
+    $query = "SELECT d.*, t.libelle as type_libelle
                   FROM BNR_don d
-                  INNER JOIN BNR_besoin b ON d.id_besoin = b.id
-                  INNER JOIN BNR_ville v ON b.id_ville = v.id
-                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
+                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
                   WHERE d.quantity_restante > 0
                   ORDER BY d.date_saisie ASC, d.id ASC";
 
@@ -43,13 +48,24 @@ class DonRepository
 
   public function getBesoinsDisponibles()
   {
-    $query = "SELECT b.id, b.libelle, b.quantity_restante, v.nom as ville_nom, t.libelle as type_libelle
+    $query = "SELECT b.id, b.libelle, b.quantity_restante, b.prix_unitaire, b.date_besoin,
+                     v.nom as ville_nom, t.libelle as type_libelle
                   FROM BNR_besoin b
                   INNER JOIN BNR_ville v ON b.id_ville = v.id
                   INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   WHERE b.quantity_restante > 0
-                  ORDER BY v.nom, b.libelle";
+                  ORDER BY b.date_besoin ASC, v.nom, b.libelle";
 
+    $result = $this->db->query($query);
+    return $result->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * Récupère tous les types de besoin pour le formulaire de don
+   */
+  public function getAllTypesBesoinForDonForm()
+  {
+    $query = "SELECT * FROM BNR_type_besoin ORDER BY libelle ASC";
     $result = $this->db->query($query);
     return $result->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -95,14 +111,20 @@ class DonRepository
     ]);
   }
 
-  public function createDon($idBesoin, $quantity, $dateSaisie)
+  /**
+   * Crée un nouveau don (sans lien avec un besoin spécifique)
+   * Le don spécifie ce qui est donné : riz, eau, huile, etc.
+   * Pour l'argent, libelle = NULL
+   */
+  public function createDon($idTypeBesoin, $libelle, $quantity, $dateSaisie)
   {
-    $query = "INSERT INTO BNR_don (id_besoin, quantity, quantity_restante, date_saisie)
-                  VALUES (:id_besoin, :quantity, :quantity_restante, :date_saisie)";
+    $query = "INSERT INTO BNR_don (id_type_besoin, libelle, quantity, quantity_restante, date_saisie)
+                  VALUES (:id_type_besoin, :libelle, :quantity, :quantity_restante, :date_saisie)";
 
     $stmt = $this->db->prepare($query);
     $stmt->execute([
-      ':id_besoin' => $idBesoin,
+      ':id_type_besoin' => $idTypeBesoin,
+      ':libelle' => $libelle,
       ':quantity' => $quantity,
       ':quantity_restante' => $quantity,
       ':date_saisie' => $dateSaisie
@@ -111,13 +133,14 @@ class DonRepository
     return $this->db->lastInsertId();
   }
 
+  /**
+   * Récupère tous les dons avec leurs informations
+   */
   public function getAllDons()
   {
-    $query = "SELECT d.*, b.libelle as besoin_libelle, v.nom as ville_nom, t.libelle as type_libelle
+    $query = "SELECT d.*, t.libelle as type_libelle
                   FROM BNR_don d
-                  INNER JOIN BNR_besoin b ON d.id_besoin = b.id
-                  INNER JOIN BNR_ville v ON b.id_ville = v.id
-                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
+                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
                   ORDER BY d.date_saisie DESC";
 
     $result = $this->db->query($query);
@@ -130,6 +153,7 @@ class DonRepository
                     dp.*,
                     d.date_saisie as don_date,
                     d.quantity as don_quantity,
+                    d.libelle as don_libelle,
                     b.libelle as besoin_libelle,
                     t.libelle as type_libelle,
                     b.quantity as besoin_quantity,
@@ -252,4 +276,100 @@ class DonRepository
       'total_reste' => max(0, $totalRecus - $totalAttribues),
     ];
   }
+
+  /**
+   * Récupère les villes avec leurs besoins et dons détaillés
+   */
+  public function getVillesWithBesoinsAndDons(): array
+  {
+    // Récupérer toutes les villes
+    $queryVilles = "SELECT * FROM BNR_ville ORDER BY nom ASC";
+    $resultVilles = $this->db->query($queryVilles);
+    $villes = $resultVilles->fetchAll(PDO::FETCH_ASSOC);
+
+    $data = [];
+    foreach ($villes as $ville) {
+      $idVille = $ville['id'];
+
+      // Récupérer les besoins de cette ville
+      $queryBesoins = "SELECT
+        b.id, b.libelle, b.quantity, b.quantity_restante, b.prix_unitaire,
+        t.libelle as type_libelle
+        FROM BNR_besoin b
+        INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
+        WHERE b.id_ville = ?
+        ORDER BY t.libelle, b.libelle";
+      $stmtBesoins = $this->db->prepare($queryBesoins);
+      $stmtBesoins->execute([$idVille]);
+      $besoins = $stmtBesoins->fetchAll(PDO::FETCH_ASSOC);
+
+      // Récupérer les dons dispatchés (distribués) à cette ville via la table dispatch
+      $queryDons = "SELECT
+        d.id as don_id,
+        d.quantity,
+        d.quantity_restante,
+        d.date_saisie,
+        d.libelle as don_libelle,
+        b.libelle as besoin_libelle,
+        t.libelle as type_libelle,
+        disp.quantity as quantity_dispatchee,
+        disp.date_dispatch
+        FROM BNR_dispatch disp
+        INNER JOIN BNR_don d ON disp.id_don = d.id
+        INNER JOIN BNR_besoin b ON disp.id_besoin = b.id
+        INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
+        WHERE b.id_ville = ?
+        ORDER BY disp.date_dispatch DESC";
+      $stmtDons = $this->db->prepare($queryDons);
+      $stmtDons->execute([$idVille]);
+      $dons = $stmtDons->fetchAll(PDO::FETCH_ASSOC);
+
+      $data[] = [
+        'id' => $ville['id'],
+        'nom' => $ville['nom'],
+        'nombre_sinistres' => $ville['nombre_sinistres'],
+        'besoins' => $besoins,
+        'dons' => $dons
+      ];
+    }
+
+    return $data;
+  }
+
+  public function getRecapStatistics(): array
+  {
+    $totalBesoinsResult = $this->db->query(
+      "SELECT COALESCE(SUM(
+        CASE
+          WHEN prix_unitaire IS NULL THEN quantity
+          ELSE quantity * prix_unitaire
+        END
+      ), 0) as total
+       FROM BNR_besoin"
+    );
+    $totalBesoins = (float) $totalBesoinsResult->fetch(PDO::FETCH_ASSOC)['total'];
+
+    $totalRestantsResult = $this->db->query(
+      "SELECT COALESCE(SUM(
+        CASE
+          WHEN prix_unitaire IS NULL THEN quantity_restante
+          ELSE quantity_restante * prix_unitaire
+        END
+      ), 0) as total
+       FROM BNR_besoin"
+    );
+    $totalRestants = (float) $totalRestantsResult->fetch(PDO::FETCH_ASSOC)['total'];
+
+    // Les besoins satisfaits = besoins totaux - besoins restants
+    // Cela inclut automatiquement les dons ET les achats
+    $totalSatisfaits = $totalBesoins - $totalRestants;
+
+    return [
+      'total_besoins_montant' => $totalBesoins,
+      'total_satisfaits_montant' => $totalSatisfaits,
+      'total_restants_montant' => $totalRestants,
+      'pourcentage_satisfait' => $totalBesoins > 0 ? ($totalSatisfaits / $totalBesoins * 100) : 0
+    ];
+  }
 }
+

@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= $pageTitle ?? 'BNGRC - Système de Gestion des Dons' ?></title>
-  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/assets/bootstrap-icons/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>/assets/bootstrap-icons/font/bootstrap-icons.min.css">
   <style>
     :root {
       --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -248,7 +248,7 @@
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/dons">
+      <a class="navbar-brand" href="<?= BASE_URL ?>/dons">
         <i class="bi bi-heart-fill"></i> BNGRC
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -257,14 +257,52 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <a class="nav-link <?= ($currentPage ?? '') == 'dons' ? 'active' : '' ?>" href="/dons">
+            <a class="nav-link <?= ($currentPage ?? '') == 'dashboard' ? 'active' : '' ?>" href="<?= BASE_URL ?>/">
               <i class="bi bi-house-heart"></i> Accueil
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link <?= ($currentPage ?? '') == 'history' ? 'active' : '' ?>" href="/dons/history">
+            <a class="nav-link <?= ($currentPage ?? '') == 'dons' ? 'active' : '' ?>" href="<?= BASE_URL ?>/dons">
+              <i class="bi bi-heart"></i> Dons
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <?= ($currentPage ?? '') == 'simulation' ? 'active' : '' ?>"
+              href="<?= BASE_URL ?>/dons/simulation">
+              <i class="bi bi-play-circle"></i> Simulation
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <?= ($currentPage ?? '') == 'recapitulation' ? 'active' : '' ?>"
+              href="<?= BASE_URL ?>/dons/recapitulation">
+              <i class="bi bi-clipboard-data"></i> Récapitulation
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <?= ($currentPage ?? '') == 'history' ? 'active' : '' ?>"
+              href="<?= BASE_URL ?>/dons/history">
               <i class="bi bi-clock-history"></i> Historique
             </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <?= in_array($currentPage ?? '', ['achats']) ? 'active' : '' ?>" href="#"
+              id="navbarDropdownAchats" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-cart-fill"></i> Achats
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownAchats">
+              <li>
+                <a class="dropdown-item" href="<?= BASE_URL ?>/achats/besoins-restants">
+                  <i class="bi bi-cart-plus text-success"></i>
+                  <span>Besoins Restants</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="<?= BASE_URL ?>/achats">
+                  <i class="bi bi-list-ul text-info"></i>
+                  <span>Historique Achats</span>
+                </a>
+              </li>
+            </ul>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle <?= in_array($currentPage ?? '', ['villes', 'besoins', 'types']) ? 'active' : '' ?>"
@@ -273,19 +311,19 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownGestion">
               <li>
-                <a class="dropdown-item" href="/villes">
+                <a class="dropdown-item" href="<?= BASE_URL ?>/villes">
                   <i class="bi bi-geo-alt-fill text-danger"></i>
                   <span>Villes</span>
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/types-besoin">
+                <a class="dropdown-item" href="<?= BASE_URL ?>/types-besoin">
                   <i class="bi bi-tag-fill text-info"></i>
                   <span>Types de Besoins</span>
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="/besoins">
+                <a class="dropdown-item" href="<?= BASE_URL ?>/besoins">
                   <i class="bi bi-exclamation-triangle-fill text-warning"></i>
                   <span>Besoins</span>
                 </a>

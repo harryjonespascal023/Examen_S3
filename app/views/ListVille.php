@@ -7,7 +7,7 @@ include __DIR__ . '/includes/header.php';
 <div class="page-header">
   <div class="d-flex align-items-center justify-content-between">
     <h1><i class="bi bi-geo-alt-fill text-danger"></i> Liste des Villes</h1>
-    <a class="btn btn-primary" href="/villes/create">
+    <a class="btn btn-primary" href="<?= BASE_URL ?>/villes/create">
       <i class="bi bi-plus-circle"></i> Ajouter une ville
     </a>
   </div>
@@ -44,10 +44,11 @@ include __DIR__ . '/includes/header.php';
                   </span>
                 </td>
                 <td class="text-end">
-                  <a class="btn btn-sm btn-info" href="/villes/<?php echo (int) $ville->id; ?>/edit">
+                  <a class="btn btn-sm btn-info" href="<?= BASE_URL ?>/villes/<?php echo (int) $ville->id; ?>/edit">
                     <i class="bi bi-pencil"></i> Modifier
                   </a>
-                  <form class="d-inline" method="post" action="/villes/<?php echo (int) $ville->id; ?>/delete">
+                  <form class="d-inline" method="post"
+                    action="<?= BASE_URL ?>/villes/<?php echo (int) $ville->id; ?>/delete">
                     <button class="btn btn-sm btn-danger" type="submit">
                       <i class="bi bi-trash"></i> Supprimer
                     </button>

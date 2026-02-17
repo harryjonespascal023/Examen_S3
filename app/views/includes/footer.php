@@ -1,7 +1,7 @@
 </div>
 </div>
 
-<footer class="bg-dark text-white mt-5">
+<footer>
   <div class="container-fluid py-4">
     <div class="row">
       <div class="col-md-4 mb-3 mb-md-0">
@@ -19,49 +19,45 @@
         <h6 class="fw-bold mb-3">Liens rapides</h6>
         <ul class="list-unstyled">
           <li class="mb-2">
-            <a href="/dons" class="text-decoration-none text-muted hover-text-white">
+            <a href="<?= BASE_URL ?>/dons" class="text-decoration-none text-muted hover-text-white">
               <i class="bi bi-chevron-right"></i> Accueil
             </a>
           </li>
           <li class="mb-2">
-            <a href="/dons/history" class="text-decoration-none text-muted hover-text-white">
+            <a href="<?= BASE_URL ?>/dons/history" class="text-decoration-none text-muted hover-text-white">
               <i class="bi bi-chevron-right"></i> Historique des dispatches
             </a>
           </li>
           <li class="mb-2">
-            <a href="/villes" class="text-decoration-none text-muted hover-text-white">
+            <a href="<?= BASE_URL ?>/villes" class="text-decoration-none text-muted hover-text-white">
               <i class="bi bi-chevron-right"></i> Gestion des villes
             </a>
           </li>
           <li class="mb-2">
-            <a href="/besoins" class="text-decoration-none text-muted hover-text-white">
+            <a href="<?= BASE_URL ?>/besoins" class="text-decoration-none text-muted hover-text-white">
               <i class="bi bi-chevron-right"></i> Gestion des besoins
             </a>
           </li>
           <li class="mb-2">
-            <a href="/types-besoin" class="text-decoration-none text-muted hover-text-white">
+            <a href="<?= BASE_URL ?>/types-besoin" class="text-decoration-none text-muted hover-text-white">
               <i class="bi bi-chevron-right"></i> Types de besoins
             </a>
           </li>
         </ul>
       </div>
       <div class="col-md-4">
-        <h6 class="fw-bold mb-3">À propos</h6>
-        <div class="d-flex align-items-center mb-2">
-          <i class="bi bi-check-circle-fill text-success me-2"></i>
-          <span class="text-muted small">Distribution FIFO des dons</span>
-        </div>
-        <div class="d-flex align-items-center mb-2">
-          <i class="bi bi-shield-check text-info me-2"></i>
-          <span class="text-muted small">Gestion sécurisée</span>
-        </div>
-        <div class="d-flex align-items-center mb-2">
-          <i class="bi bi-graph-up text-warning me-2"></i>
-          <span class="text-muted small">Suivi en temps réel</span>
+        <h6 class="fw-bold mb-3">Participants</h6>
+        <div class="d-flex align-items-center">
+          <i class="bi bi-people-fill text-primary me-2"></i>
+          <span class="text-muted small">Harry Jones ETU3922</span>
         </div>
         <div class="d-flex align-items-center">
           <i class="bi bi-people-fill text-primary me-2"></i>
-          <span class="text-muted small">Aide aux populations</span>
+          <span class="text-muted small">Mihaja Nasandratriniavo ETU4167</span>
+        </div>
+        <div class="d-flex align-items-center">
+          <i class="bi bi-people-fill text-primary me-2"></i>
+          <span class="text-muted small">Juan Albertino ETU4094</span>
         </div>
       </div>
     </div>
@@ -78,7 +74,7 @@
   </div>
 </footer>
 
-<script src="/assets/js/bootstrap.bundle.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/bootstrap.bundle.min.js"></script>
 <script>
   // Animation au scroll
   document.addEventListener('DOMContentLoaded', function () {
