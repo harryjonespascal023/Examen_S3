@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS BNR_don(
     quantity INT NOT NULL,
     quantity_restante INT NOT NULL,
     date_saisie DATE NOT NULL,
-    FOREIGN KEY (id_besoin) REFERENCES BNR_besoin(id)
+    FOREIGN KEY (id_type_besoin) REFERENCES BNR_type_besoin(id)
 );
 CREATE TABLE IF NOT EXISTS BNR_dispatch(
     id INT PRIMARY KEY AUTO_INCREMENT,
