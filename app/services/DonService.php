@@ -37,6 +37,9 @@ class DonService
     if ($mode === 'quantity') {
       return $this->executeDispatchByQuantity(false);
     }
+    if ($mode === 'proportional') {
+      return $this->executeDispatchByProportional(false);
+    }
     return $this->executeDispatchByDate(false); // Mode par défaut: FIFO par date
   }
 
@@ -47,6 +50,9 @@ class DonService
   {
     if ($mode === 'quantity') {
       return $this->executeDispatchByQuantity(true);
+    }
+    if ($mode === 'proportional') {
+      return $this->executeDispatchByProportional(true);
     }
     return $this->executeDispatchByDate(true); // Mode par défaut: FIFO par date
   }
@@ -369,113 +375,186 @@ class DonService
     return $report;
   }
 
-  private function executeDispatchProportionnel(array $besoins, array $dons, bool $isSimulation, array $stats): array
-{
-  $besoinsByLibelle = [];
-  foreach ($besoins as $besoin) {
-    $libelleKey = $this->normalizeLibelleKey($besoin['libelle']);
-    $besoinsByLibelle[$libelleKey][] = $besoin;
-  }
+  /**
+   * Exécute ou simule le dispatch des dons en mode proportionnel
+   * LOGIQUE:
+   * - Les dons sont matchés par libellé exact avec les besoins
+   * - Pour chaque groupe de besoins avec le même libellé, on distribue les dons proportionnellement
+   * - Calcul: (quantité_besoin / total_besoins) * quantité_don_disponible
+   * - Arrondi intelligent: on garde les parties entières, puis on arrondit vers le haut
+   *   les décimales les plus élevées jusqu'à atteindre le total exact du don
+   *
+   * Exemple: Don de 5 unités, besoins de 1, 3, 5 (total=9)
+   * - Proportions: 0.555, 1.666, 2.777
+   * - Parties entières: 0, 1, 2 (somme=3)
+   * - Reste à distribuer: 2
+   * - Décimales triées: 0.777, 0.666, 0.555
+   * - On ajoute 1 aux 2 premiers: 3, 2, 0 (total=5)
+   *
+   * @param bool $isSimulation Si true, ne fait qu'une simulation sans modification de la BDD
+   */
+  private function executeDispatchByProportional(bool $isSimulation = false)
+  {
+    $stats = [
+      'total_dispatches' => 0,
+      'total_quantity_dispatched' => 0,
+      'besoins_satisfaits' => 0,
+      'dons_utilises' => 0,
+      'details' => [],
+      'mode' => 'proportional'
+    ];
 
-  $donsByLibelle = [];
-  foreach ($dons as $don) {
-    $libelleKey = $this->normalizeLibelleKey($don['libelle']);
-    $donsByLibelle[$libelleKey][] = $don;
-  }
+    try {
+      // 1. Récupérer les besoins non satisfaits
+      $besoins = $this->donRepository->getBesoinsNonSatisfaits();
 
-  foreach ($besoinsByLibelle as $libelleKey => $besoinsGroup) {
-    if (empty($donsByLibelle[$libelleKey])) {
-      continue;
-    }
+      // 2. Récupérer les dons non utilisés totalement
+      $dons = $this->donRepository->getDonsNonUtilises();
 
-    $totalDonRestant = 0;
-    foreach ($donsByLibelle[$libelleKey] as $don) {
-      $totalDonRestant += (int) $don['quantity_restante'];
-    }
-    if ($totalDonRestant <= 0) {
-      continue;
-    }
-
-    $sumNeeds = 0;
-    foreach ($besoinsGroup as $b) {
-      $sumNeeds += (int) $b['quantity_restante'];
-    }
-    if ($sumNeeds <= 0) {
-      continue;
-    }
-
-    // target_i = floor(totalDonRestant * besoin_i / sumNeeds)
-    $targets = [];
-    foreach ($besoinsGroup as $b) {
-      $need = (int) $b['quantity_restante'];
-      $target = (int) floor(($totalDonRestant * $need) / $sumNeeds);
-      if ($target > $need) {
-        $target = $need;
-      }
-      $targets[(int) $b['id']] = $target;
-    }
-
-    // Consommer les dons FIFO à l'intérieur du groupe (même libellé)
-    $groupDons = &$donsByLibelle[$libelleKey];
-
-    foreach ($besoinsGroup as $besoin) {
-      $besoinId = (int) $besoin['id'];
-      $targetForBesoin = (int) ($targets[$besoinId] ?? 0);
-      if ($targetForBesoin <= 0) {
-        continue;
-      }
-
-      $remaining = $targetForBesoin;
-
-      foreach ($groupDons as &$don) {
-        if ($remaining <= 0) {
-          break;
+      // 3. Grouper besoins ET dons par libellé
+      $besoinsByLibelle = [];
+      foreach ($besoins as $besoin) {
+        $libelleKey = $besoin['libelle'] === null ? '__ARGENT__' : strtolower(trim($besoin['libelle']));
+        if (!isset($besoinsByLibelle[$libelleKey])) {
+          $besoinsByLibelle[$libelleKey] = [];
         }
+        $besoinsByLibelle[$libelleKey][] = $besoin;
+      }
 
-        $available = (int) $don['quantity_restante'];
-        if ($available <= 0) {
+      $donsByLibelle = [];
+      foreach ($dons as $don) {
+        $libelleKey = $don['libelle'] === null ? '__ARGENT__' : strtolower(trim($don['libelle']));
+        if (!isset($donsByLibelle[$libelleKey])) {
+          $donsByLibelle[$libelleKey] = [];
+        }
+        $donsByLibelle[$libelleKey][] = $don;
+      }
+
+      // 4. Pour chaque groupe de libellé, faire la distribution proportionnelle
+      foreach ($besoinsByLibelle as $libelleKey => $besoinsGroup) {
+        if (empty($donsByLibelle[$libelleKey])) {
           continue;
         }
 
-        $donId = (int) $don['id'];
-        $qty = min($available, $remaining);
-
-        if (!$isSimulation) {
-          $this->donRepository->insertDispatch($donId, $besoinId, $qty);
-          $this->donRepository->updateQuantityRestanteDon($donId, $qty);
-          $this->donRepository->updateQuantityRestanteBesoin($besoinId, $qty);
+        // Calculer le total des dons disponibles pour ce libellé
+        $totalDonRestant = 0;
+        foreach ($donsByLibelle[$libelleKey] as $don) {
+          $totalDonRestant += (int) $don['quantity_restante'];
+        }
+        if ($totalDonRestant <= 0) {
+          continue;
         }
 
-        $don['quantity_restante'] -= $qty;
-        $remaining -= $qty;
+        // Calculer le total des besoins pour ce libellé
+        $sumNeeds = 0;
+        foreach ($besoinsGroup as $b) {
+          $sumNeeds += (int) $b['quantity_restante'];
+        }
+        if ($sumNeeds <= 0) {
+          continue;
+        }
 
-        $stats['total_dispatches']++;
-        $stats['total_quantity_dispatched'] += $qty;
-        $stats['details'][] = [
-          'don_id' => $donId,
-          'besoin_id' => $besoinId,
-          'type' => $don['type_libelle'],
-          'libelle' => $don['libelle'] ?? 'Argent',
-          'ville' => $besoin['ville_nom'],
-          'besoin_libelle' => $besoin['libelle'] ?? 'Argent',
-          'besoin_date' => $besoin['date_besoin'],
-          'quantity' => $qty,
-          'don_date' => $don['date_saisie']
-        ];
+        // Calculer les distributions proportionnelles avec arrondi intelligent
+        $distributions = [];
+        $totalFloor = 0;
 
-        if ((int) $don['quantity_restante'] === 0) {
-          $stats['dons_utilises']++;
+        foreach ($besoinsGroup as $index => $besoin) {
+          $need = (int) $besoin['quantity_restante'];
+          $proportion = ($need / $sumNeeds) * $totalDonRestant;
+          $floor = (int) floor($proportion);
+          $decimal = $proportion - $floor;
+
+          $distributions[$index] = [
+            'besoin' => $besoin,
+            'proportion' => $proportion,
+            'floor' => $floor,
+            'decimal' => $decimal,
+            'final' => $floor
+          ];
+          $totalFloor += $floor;
+        }
+
+        // Distribuer le reste en arrondissant vers le haut les plus grandes décimales
+        $remainder = $totalDonRestant - $totalFloor;
+        if ($remainder > 0) {
+          // Trier par décimale décroissante
+          usort($distributions, function ($a, $b) {
+            return $b['decimal'] <=> $a['decimal'];
+          });
+
+          // Ajouter 1 aux premiers éléments
+          for ($i = 0; $i < $remainder && $i < count($distributions); $i++) {
+            $distributions[$i]['final']++;
+          }
+        }
+
+        // Dispatcher les dons selon les quantités calculées
+        foreach ($distributions as $distrib) {
+          $besoin = $distrib['besoin'];
+          $targetQuantity = $distrib['final'];
+
+          if ($targetQuantity <= 0) {
+            continue;
+          }
+
+          $besoinId = $besoin['id'];
+          $remaining = $targetQuantity;
+
+          // Consommer les dons FIFO pour ce besoin
+          foreach ($donsByLibelle[$libelleKey] as &$don) {
+            if ($remaining <= 0) {
+              break;
+            }
+
+            $available = (int) $don['quantity_restante'];
+            if ($available <= 0) {
+              continue;
+            }
+
+            $donId = $don['id'];
+            $qty = min($available, $remaining);
+
+            // Enregistrer le dispatch
+            if (!$isSimulation) {
+              $this->donRepository->insertDispatch($donId, $besoinId, $qty);
+              $this->donRepository->updateQuantityRestanteDon($donId, $qty);
+              $this->donRepository->updateQuantityRestanteBesoin($besoinId, $qty);
+            }
+
+            $don['quantity_restante'] -= $qty;
+            $remaining -= $qty;
+
+            $stats['total_dispatches']++;
+            $stats['total_quantity_dispatched'] += $qty;
+            $stats['details'][] = [
+              'don_id' => $donId,
+              'besoin_id' => $besoinId,
+              'type' => $don['type_libelle'],
+              'libelle' => $don['libelle'] ?? 'Argent',
+              'ville' => $besoin['ville_nom'],
+              'besoin_libelle' => $besoin['libelle'] ?? 'Argent',
+              'besoin_date' => $besoin['date_besoin'],
+              'quantity' => $qty,
+              'don_date' => $don['date_saisie']
+            ];
+
+            if ((int) $don['quantity_restante'] === 0) {
+              $stats['dons_utilises']++;
+            }
+          }
+
+          if ($remaining === 0) {
+            $stats['besoins_satisfaits']++;
+          }
         }
       }
 
-      if ($remaining === 0) {
-        $stats['besoins_satisfaits']++;
-      }
+      return $stats;
+
+    } catch (Exception $e) {
+      throw new Exception("Erreur lors du dispatch proportionnel : " . $e->getMessage());
     }
   }
-
-  return $stats;
-}
 
 
   public function getDashboardData(): array

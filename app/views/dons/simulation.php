@@ -69,6 +69,9 @@
                 <option value="quantity">
                   📊 Par quantité croissante - Petits besoins en premier
                 </option>
+                <option value="proportional">
+                  ⚖️ Proportionnel - Distribution équitable selon les besoins
+                </option>
               </select>
             </div>
             <div class="col-md-4 text-center">
@@ -129,9 +132,14 @@
             </h5>
             <span class="badge bg-light text-dark fs-6">
               <?php
-              $modeLabel = isset($simulationResult['mode']) && $simulationResult['mode'] === 'quantity'
-                ? '📊 Mode: Quantité Croissante'
-                : '📅 Mode: Date (FIFO)';
+              $mode = $simulationResult['mode'] ?? 'date';
+              if ($mode === 'quantity') {
+                $modeLabel = '📊 Mode: Quantité Croissante';
+              } elseif ($mode === 'proportional') {
+                $modeLabel = '⚖️ Mode: Proportionnel';
+              } else {
+                $modeLabel = '📅 Mode: Date (FIFO)';
+              }
               echo $modeLabel;
               ?>
             </span>
@@ -301,6 +309,8 @@
         modeLabel.textContent = 'Mode FIFO';
       } else if (selectedMode === 'quantity') {
         modeLabel.textContent = 'Mode Quantité Croissante';
+      } else if (selectedMode === 'proportional') {
+        modeLabel.textContent = 'Mode Proportionnel';
       }
 
       console.log('Mode mis à jour:', selectedMode, '| Simulate:', simulateMode.value, '| Validate:', validateMode.value);

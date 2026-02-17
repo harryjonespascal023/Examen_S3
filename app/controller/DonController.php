@@ -67,7 +67,16 @@ class DonController
     try {
       $mode = Flight::request()->data->mode ?? 'date';
       $stats = $this->donService->dispatchDons($mode);
-      $modeLabel = $mode === 'quantity' ? 'quantité croissante' : 'date (FIFO)';
+
+      // Déterminer le label du mode
+      if ($mode === 'quantity') {
+        $modeLabel = 'quantité croissante';
+      } elseif ($mode === 'proportional') {
+        $modeLabel = 'proportionnel';
+      } else {
+        $modeLabel = 'date (FIFO)';
+      }
+
       $message = sprintf(
         'Dispatch réussi (%s): %d dispatches, %d unités dispatchées, %d besoins satisfaits',
         $modeLabel,
