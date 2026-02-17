@@ -68,17 +68,6 @@ class DonService
    * @param bool $isSimulation Si true, ne fait qu'une simulation sans modification de la BDD
    */
   private function executeDispatchByDate(bool $isSimulation = false)
-  public function dispatchDons(string $mode = 'fifo')
-  {
-    return $this->executeDispatch(false, $mode);
-  }
-
-  public function simulateDispatch(string $mode = 'fifo')
-  {
-    return $this->executeDispatch(true, $mode);
-  }
-
-  private function executeDispatch(bool $isSimulation = false, string $mode = 'fifo')
   {
     $stats = [
       'total_dispatches' => 0,
@@ -92,10 +81,20 @@ class DonService
     try {
       // 1. Récupérer les besoins non satisfaits (triés par date_besoin ASC)
       $besoins = $this->donRepository->getBesoinsNonSatisfaits();
+
+      // 2. Récupérer les dons non utilisés totalement (triés FIFO par date de saisie)
       $dons = $this->donRepository->getDonsNonUtilises();
 
-      if ($mode === 'proportionnel') {
-        return $this->executeDispatchProportionnel($besoins, $dons, $isSimulation, $stats);
+      // 3. Grouper les dons par libellé (case-insensitive) pour un accès rapide
+      $donsByLibelle = [];
+      foreach ($dons as $don) {
+        // Normaliser le libellé (lowercase, trim)
+        $libelleKey = $don['libelle'] === null ? '__ARGENT__' : strtolower(trim($don['libelle']));
+
+        if (!isset($donsByLibelle[$libelleKey])) {
+          $donsByLibelle[$libelleKey] = [];
+        }
+        $donsByLibelle[$libelleKey][] = $don;
       }
 
       // 4. Algorithme : traiter chaque besoin selon l'ordre défini
@@ -103,182 +102,49 @@ class DonService
         $besoinId = $besoin['id'];
         $besoinLibelle = $besoin['libelle'];
         $quantityNeed = $besoin['quantity_restante'];
-      return $this->executeDispatchFifo($besoins, $dons, $isSimulation, $stats);
 
-    } catch (\Exception $e) {
-      throw new \Exception("Erreur lors du dispatch : " . $e->getMessage());
-    }
-  }
+        // Normaliser le libellé du besoin
+        $libelleKey = $besoinLibelle === null ? '__ARGENT__' : strtolower(trim($besoinLibelle));
 
-  private function normalizeLibelleKey($libelle): string
-  {
-    return $libelle === null ? '__ARGENT__' : strtolower(trim((string) $libelle));
-  }
-
-  private function executeDispatchFifo(array $besoins, array $dons, bool $isSimulation, array $stats): array
-  {
-    $donsByLibelle = [];
-    foreach ($dons as $don) {
-      $libelleKey = $this->normalizeLibelleKey($don['libelle']);
-      if (!isset($donsByLibelle[$libelleKey])) {
-        $donsByLibelle[$libelleKey] = [];
-      }
-      $donsByLibelle[$libelleKey][] = $don;
-    }
-
-    foreach ($besoins as $besoin) {
-      $besoinId = $besoin['id'];
-      $besoinLibelle = $besoin['libelle'];
-      $quantityNeed = (int) $besoin['quantity_restante'];
-
-      $libelleKey = $this->normalizeLibelleKey($besoinLibelle);
-
-      if (!isset($donsByLibelle[$libelleKey]) || empty($donsByLibelle[$libelleKey])) {
-        continue;
-      }
-
-      $quantityRemaining = $quantityNeed;
-
-      foreach ($donsByLibelle[$libelleKey] as &$don) {
-        if ($quantityRemaining <= 0) {
-          break;
-        }
-
-        if ((int) $don['quantity_restante'] <= 0) {
+        // Vérifier s'il existe des dons pour ce libellé exact
+        if (!isset($donsByLibelle[$libelleKey]) || empty($donsByLibelle[$libelleKey])) {
           continue;
         }
 
-        $donId = $don['id'];
-        $quantityAvailable = (int) $don['quantity_restante'];
+        // Variable pour suivre la progression
+        $quantityRemaining = $quantityNeed;
 
-        $quantityToDispatch = min($quantityAvailable, $quantityRemaining);
-
-        if (!$isSimulation) {
-          $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
-          $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
-          $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
-        }
-
-        $don['quantity_restante'] -= $quantityToDispatch;
-        $quantityRemaining -= $quantityToDispatch;
-
-        $stats['total_dispatches']++;
-        $stats['total_quantity_dispatched'] += $quantityToDispatch;
-        $stats['details'][] = [
-          'don_id' => $donId,
-          'besoin_id' => $besoinId,
-          'type' => $don['type_libelle'],
-          'libelle' => $don['libelle'] ?? 'Argent',
-          'ville' => $besoin['ville_nom'],
-          'besoin_libelle' => $besoin['libelle'] ?? 'Argent',
-          'besoin_date' => $besoin['date_besoin'],
-          'quantity' => $quantityToDispatch,
-          'don_date' => $don['date_saisie']
-        ];
-
-        if ((int) $don['quantity_restante'] === 0) {
-          $stats['dons_utilises']++;
-        }
-      }
-
-      if ($quantityRemaining === 0) {
-        $stats['besoins_satisfaits']++;
-      }
-    }
-
-    return $stats;
-  }
-
-  private function executeDispatchProportionnel(array $besoins, array $dons, bool $isSimulation, array $stats): array
-  {
-    $besoinsByLibelle = [];
-    foreach ($besoins as $besoin) {
-      $libelleKey = $this->normalizeLibelleKey($besoin['libelle']);
-      if (!isset($besoinsByLibelle[$libelleKey])) {
-        $besoinsByLibelle[$libelleKey] = [];
-      }
-      $besoinsByLibelle[$libelleKey][] = $besoin;
-    }
-
-    $donsByLibelle = [];
-    foreach ($dons as $don) {
-      $libelleKey = $this->normalizeLibelleKey($don['libelle']);
-      if (!isset($donsByLibelle[$libelleKey])) {
-        $donsByLibelle[$libelleKey] = [];
-      }
-      $donsByLibelle[$libelleKey][] = $don;
-    }
-
-    foreach ($besoinsByLibelle as $libelleKey => $besoinsGroup) {
-      if (!isset($donsByLibelle[$libelleKey]) || empty($donsByLibelle[$libelleKey])) {
-        continue;
-      }
-
-      $totalDonRestant = 0;
-      foreach ($donsByLibelle[$libelleKey] as $don) {
-        $totalDonRestant += (int) $don['quantity_restante'];
-      }
-      if ($totalDonRestant <= 0) {
-        continue;
-      }
-
-      $sumNeeds = 0;
-      foreach ($besoinsGroup as $b) {
-        $sumNeeds += (int) $b['quantity_restante'];
-      }
-      if ($sumNeeds <= 0) {
-        continue;
-      }
-
-      $targets = [];
-      foreach ($besoinsGroup as $b) {
-        $need = (int) $b['quantity_restante'];
-        $raw = ($totalDonRestant * $need) / $sumNeeds;
-        $target = (int) floor($raw);
-        if ($target > $need) {
-          $target = $need;
-        }
-        $targets[(int) $b['id']] = $target;
-      }
-
-      $groupDons = &$donsByLibelle[$libelleKey];
-
-      foreach ($besoinsGroup as $besoin) {
-        $besoinId = (int) $besoin['id'];
-        $targetForBesoin = (int) ($targets[$besoinId] ?? 0);
-        if ($targetForBesoin <= 0) {
-          continue;
-        }
-
-        $quantityRemainingForThisBesoin = $targetForBesoin;
-
-        foreach ($groupDons as &$don) {
-          if ($quantityRemainingForThisBesoin <= 0) {
-            break;
+        // 5. Dispatcher les dons selon FIFO jusqu'à satisfaction du besoin
+        foreach ($donsByLibelle[$libelleKey] as &$don) {
+          if ($quantityRemaining <= 0) {
+            break; // Le besoin est complètement satisfait
           }
 
-          if ((int) $don['quantity_restante'] <= 0) {
-            continue;
+          if ($don['quantity_restante'] <= 0) {
+            continue; // Ce don est épuisé, passer au suivant
           }
 
-          $donId = (int) $don['id'];
-          $quantityAvailable = (int) $don['quantity_restante'];
+          $donId = $don['id'];
+          $quantityAvailable = $don['quantity_restante'];
 
-          $quantityToDispatch = min($quantityAvailable, $quantityRemainingForThisBesoin);
+          // Calculer la quantité à dispatcher
+          $quantityToDispatch = min($quantityAvailable, $quantityRemaining);
 
-          if ($quantityToDispatch <= 0) {
-            continue;
-          }
-
+          // 6. Si ce n'est pas une simulation, enregistrer dans la base de données
           if (!$isSimulation) {
+            // Insertion dans la table dispatch
             $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
+
+            // Mise à jour des quantités restantes
             $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
             $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
           }
 
+          // Mettre à jour les variables locales
           $don['quantity_restante'] -= $quantityToDispatch;
-          $quantityRemainingForThisBesoin -= $quantityToDispatch;
+          $quantityRemaining -= $quantityToDispatch;
 
+          // Enregistrer les statistiques
           $stats['total_dispatches']++;
           $stats['total_quantity_dispatched'] += $quantityToDispatch;
           $stats['details'][] = [
@@ -293,18 +159,23 @@ class DonService
             'don_date' => $don['date_saisie']
           ];
 
-          if ((int) $don['quantity_restante'] === 0) {
+          // Compter les dons totalement utilisés
+          if ($don['quantity_restante'] == 0) {
             $stats['dons_utilises']++;
           }
         }
 
-        if ($quantityRemainingForThisBesoin === 0) {
+        // Compter les besoins totalement satisfaits
+        if ($quantityRemaining == 0) {
           $stats['besoins_satisfaits']++;
         }
       }
-    }
 
-    return $stats;
+      return $stats;
+
+    } catch (Exception $e) {
+      throw new Exception("Erreur lors du dispatch : " . $e->getMessage());
+    }
   }
 
   /**
@@ -463,7 +334,7 @@ class DonService
   public function createDon($idTypeBesoin, $libelle, $quantity, $dateSaisie = null)
   {
     if ($quantity <= 0) {
-      throw new \Exception("La quantité doit être supérieure à 0");
+      throw new Exception("La quantité doit être supérieure à 0");
     }
 
     if ($dateSaisie === null) {
@@ -694,6 +565,9 @@ class DonService
     ];
   }
 
+  /**
+   * Récupère les statistiques de récapitulation
+   */
   public function getRecapStatistics(): array
   {
     return $this->donRepository->getRecapStatistics();
@@ -736,5 +610,4 @@ class DonService
       throw new Exception("Erreur lors de la réinitialisation : " . $e->getMessage());
     }
   }
-}
 }

@@ -96,13 +96,6 @@
             <i class="bi bi-eye" style="font-size: 5rem;"></i>
             <h3 class="mt-3 mb-3">Mode Simulation</h3>
             <p class="mb-4">Visualisez le résultat du dispatch sans modifier les données</p>
-            <div class="mb-3 text-start">
-              <label for="mode_simulation" class="form-label mb-1">Mode de répartition</label>
-              <select id="mode_simulation" name="mode" class="form-select">
-                <option value="fifo" selected>FIFO</option>
-                <option value="proportionnel">Proportionnel</option>
-              </select>
-            </div>
             <button type="submit" class="btn btn-light btn-lg w-100">
               <i class="bi bi-play-circle"></i> Simuler le Dispatch
             </button>
@@ -120,13 +113,6 @@
             <i class="bi bi-check-circle-fill" style="font-size: 5rem;"></i>
             <h3 class="mt-3 mb-3">Mode Validation</h3>
             <p class="mb-4">Exécutez réellement le dispatch et enregistrez les modifications</p>
-            <div class="mb-3 text-start">
-              <label for="mode_validation" class="form-label mb-1">Mode de répartition</label>
-              <select id="mode_validation" name="mode" class="form-select">
-                <option value="fifo" selected>FIFO</option>
-                <option value="proportionnel">Proportionnel</option>
-              </select>
-            </div>
             <button type="submit" class="btn btn-light btn-lg w-100">
               <i class="bi bi-check2-all"></i> Valider le Dispatch
             </button>
