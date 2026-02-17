@@ -9,100 +9,171 @@ use Flight;
 
 class DonController
 {
-    private $donService;
+  private $donService;
 
-    public function __construct()
-    {
-        $this->donService = new DonService(new DonRepository(Flight::db()));
+  public function __construct()
+  {
+    $this->donService = new DonService(new DonRepository(Flight::db()));
+  }
+
+  public function index()
+  {
+    $dons = $this->donService->getAllDons();
+    $report = $this->donService->getReport();
+    $typesBesoin = $this->donService->getAllTypesBesoin();
+    $message = Flight::request()->query->message ?? null;
+    $messageType = Flight::request()->query->type ?? 'info';
+
+    Flight::render('dons/index', [
+      'dons' => $dons,
+      'report' => $report,
+      'typesBesoin' => $typesBesoin,
+      'message' => $message,
+      'messageType' => $messageType
+    ]);
+  }
+
+  public function createForm()
+  {
+    try {
+      $idTypeBesoin = Flight::request()->data->id_type_besoin ?? null;
+      $libelle = trim(Flight::request()->data->libelle ?? '');
+      $quantity = Flight::request()->data->quantity ?? null;
+      $dateSaisie = Flight::request()->data->date_saisie ?? date('Y-m-d');
+
+      if (!$idTypeBesoin || !$quantity) {
+        Flight::redirect('/dons?message=' . urlencode('Type de besoin et quantité requis') . '&type=danger');
+        return;
+      }
+
+      if ($quantity <= 0) {
+        Flight::redirect('/dons?message=' . urlencode('La quantité doit être supérieure à 0') . '&type=danger');
+        return;
+      }
+
+      // Si le libellé est vide, mettre NULL (pour l'argent)
+      $libelle = empty($libelle) ? null : $libelle;
+
+      $donId = $this->donService->createDon($idTypeBesoin, $libelle, $quantity, $dateSaisie);
+      Flight::redirect('/dons?message=' . urlencode('Don créé avec succès (ID: ' . $donId . ')') . '&type=success');
+
+    } catch (Exception $e) {
+      Flight::redirect('/dons?message=' . urlencode('Erreur: ' . $e->getMessage()) . '&type=danger');
     }
+  }
 
-    public function index()
-    {
-        $dons = $this->donService->getAllDons();
-        $report = $this->donService->getReport();
-        $typesBesoin = $this->donService->getAllTypesBesoin();
-        $besoins = $this->donService->getBesoinsDisponibles();
-        $message = Flight::request()->query->message ?? null;
-        $messageType = Flight::request()->query->type ?? 'info';
-
-        Flight::render('dons/index', [
-            'dons' => $dons,
-            'report' => $report,
-            'typesBesoin' => $typesBesoin,
-            'besoins' => $besoins,
-            'message' => $message,
-            'messageType' => $messageType
-        ]);
+  public function dispatchForm()
+  {
+    try {
+      $stats = $this->donService->dispatchDons();
+      $message = sprintf(
+        'Dispatch réussi: %d dispatches, %d unités dispatchées, %d besoins satisfaits',
+        $stats['total_dispatches'],
+        $stats['total_quantity_dispatched'],
+        $stats['besoins_satisfaits']
+      );
+      Flight::redirect('/dons?message=' . urlencode($message) . '&type=success');
+    } catch (Exception $e) {
+      Flight::redirect('/dons?message=' . urlencode('Erreur dispatch: ' . $e->getMessage()) . '&type=danger');
     }
+  }
 
-    public function createForm()
-    {
-        try {
-            $idBesoin = Flight::request()->data->id_besoin ?? null;
-            $quantity = Flight::request()->data->quantity ?? null;
-            $dateSaisie = Flight::request()->data->date_saisie ?? date('Y-m-d');
+  /**
+   * Page de simulation
+   */
+  public function simulationPage()
+  {
+    $message = Flight::request()->query->message ?? null;
+    $messageType = Flight::request()->query->type ?? 'info';
 
-            if (!$idBesoin || !$quantity) {
-                Flight::redirect('/dons?message=' . urlencode('Besoin et quantité requis') . '&type=danger');
-                return;
-            }
+    Flight::render('dons/simulation', [
+      'message' => $message,
+      'messageType' => $messageType,
+      'simulationResult' => null
+    ]);
+  }
 
-            if ($quantity <= 0) {
-                Flight::redirect('/dons?message=' . urlencode('La quantité doit être supérieure à 0') . '&type=danger');
-                return;
-            }
+  /**
+   * Exécute une simulation du dispatch
+   */
+  public function simulate()
+  {
+    try {
+      $stats = $this->donService->simulateDispatch();
 
-            $donId = $this->donService->createDon($idBesoin, $quantity, $dateSaisie);
-            Flight::redirect('/dons?message=' . urlencode('Don créé avec succès (ID: ' . $donId . ')') . '&type=success');
+      Flight::render('dons/simulation', [
+        'message' => 'Simulation terminée avec succès',
+        'messageType' => 'success',
+        'simulationResult' => $stats
+      ]);
 
-        } catch (Exception $e) {
-            Flight::redirect('/dons?message=' . urlencode('Erreur: ' . $e->getMessage()) . '&type=danger');
-        }
+    } catch (Exception $e) {
+      Flight::render('dons/simulation', [
+        'message' => 'Erreur simulation: ' . $e->getMessage(),
+        'messageType' => 'danger',
+        'simulationResult' => null
+      ]);
     }
+  }
 
-    public function dispatchForm()
-    {
-        try {
-            $stats = $this->donService->dispatchDons();
-            $message = sprintf(
-                'Dispatch réussi: %d dispatches, %d unités dispatchées, %d besoins satisfaits',
-                $stats['total_dispatches'],
-                $stats['total_quantity_dispatched'],
-                $stats['besoins_satisfaits']
-            );
-            Flight::redirect('/dons?message=' . urlencode($message) . '&type=success');
-        } catch (Exception $e) {
-            Flight::redirect('/dons?message=' . urlencode('Erreur dispatch: ' . $e->getMessage()) . '&type=danger');
-        }
+  public function history()
+  {
+    try {
+      $history = $this->donService->getDispatchHistory();
+
+      Flight::render('dons/history', [
+        'history' => $history
+      ]);
+
+    } catch (Exception $e) {
+      Flight::json([
+        'success' => false,
+        'message' => 'Erreur lors de la récupération de l\'historique : ' . $e->getMessage()
+      ], 500);
     }
-    public function history()
-    {
-        try {
-            $history = $this->donService->getDispatchHistory();
+  }
 
-            Flight::render('dons/history', [
-                'history' => $history
-            ]);
+  public function dashboard(): void
+  {
+    $data = $this->donService->getDashboardData();
 
-        } catch (Exception $e) {
-            Flight::json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération de l\'historique : ' . $e->getMessage()
-            ], 500);
-        }
+    Flight::render('dashboard', [
+      'villes' => $data['villes'] ?? [],
+      'totaux' => $data['totaux'] ?? [
+        'total_recus' => 0,
+        'total_attribues' => 0,
+        'total_reste' => 0,
+      ],
+    ]);
+  }
+
+  /**
+   * Page de récapitulation
+   */
+  public function recapitulation(): void
+  {
+    $stats = $this->donService->getRecapStatistics();
+
+    Flight::render('dons/recapitulation', [
+      'stats' => $stats
+    ]);
+  }
+
+  public function recapitulationAjax(): void
+  {
+    try {
+      $stats = $this->donService->getRecapStatistics();
+
+      Flight::json([
+        'success' => true,
+        'data' => $stats
+      ]);
+
+    } catch (Exception $e) {
+      Flight::json([
+        'success' => false,
+        'message' => 'Erreur lors de la récupération des statistiques : ' . $e->getMessage()
+      ], 500);
     }
-
-    public function dashboard(): void
-    {
-        $data = $this->donService->getDashboardData();
-
-        Flight::render('dashboard', [
-            'villes' => $data['villes'] ?? [],
-            'totaux' => $data['totaux'] ?? [
-                'total_recus' => 0,
-                'total_attribues' => 0,
-                'total_reste' => 0,
-            ],
-        ]);
-    }
+  }
 }

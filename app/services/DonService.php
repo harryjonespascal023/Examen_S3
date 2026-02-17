@@ -6,171 +6,221 @@ use app\repository\DonRepository;
 
 class DonService
 {
-    private $donRepository;
+  private $donRepository;
 
-    public function __construct(DonRepository $donRepository)
-    {
-        $this->donRepository = $donRepository;
-    }
+  public function __construct(DonRepository $donRepository)
+  {
+    $this->donRepository = $donRepository;
+  }
 
-    public function getAllTypesBesoin()
-    {
-        return $this->donRepository->getAllTypesBesoin();
-    }
+  public function getAllTypesBesoin()
+  {
+    return $this->donRepository->getAllTypesBesoin();
+  }
 
-    public function getBesoinsDisponibles()
-    {
-        return $this->donRepository->getBesoinsDisponibles();
-    }
+  public function getBesoinsDisponibles()
+  {
+    return $this->donRepository->getBesoinsDisponibles();
+  }
 
-    public function dispatchDons()
-    {
-        $stats = [
-            'total_dispatches' => 0,
-            'total_quantity_dispatched' => 0,
-            'besoins_satisfaits' => 0,
-            'dons_utilises' => 0,
-            'details' => []
-        ];
+  public function getAllTypesBesoinForDonForm()
+  {
+    return $this->donRepository->getAllTypesBesoinForDonForm();
+  }
 
-        try {
-            // 1. Récupérer les besoins non satisfaits
-            $besoins = $this->donRepository->getBesoinsNonSatisfaits();
+  public function dispatchDons()
+  {
+    return $this->executeDispatch(false); // Exécution réelle
+  }
 
-            // 2. Récupérer les dons non utilisés totalement (triés FIFO par date de saisie)
-            $dons = $this->donRepository->getDonsNonUtilises();
+  /**
+   * Simule le dispatch des dons sans enregistrer dans la base de données
+   */
+  public function simulateDispatch()
+  {
+    return $this->executeDispatch(true); // Simulation
+  }
 
-            // 3. Grouper les dons par type de besoin pour un accès rapide
-            $donsByType = [];
-            foreach ($dons as $don) {
-                $typeId = $don['id_type_besoin'];
-                if (!isset($donsByType[$typeId])) {
-                    $donsByType[$typeId] = [];
-                }
-                $donsByType[$typeId][] = $don;
-            }
+  /**
+   * Exécute ou simule le dispatch des dons
+   * LOGIQUE:
+   * - Les besoins les plus anciens (date_besoin) reçoivent en premier (FIFO)
+   * - Les dons sont matchés par libellé exact avec les besoins (ex: don "Riz" → besoin "Riz")
+   * - Pour l'argent, libelle = NULL pour les deux
+   * @param bool $isSimulation Si true, ne fait qu'une simulation sans modification de la BDD
+   */
+  private function executeDispatch(bool $isSimulation = false)
+  {
+    $stats = [
+      'total_dispatches' => 0,
+      'total_quantity_dispatched' => 0,
+      'besoins_satisfaits' => 0,
+      'dons_utilises' => 0,
+      'details' => [],
+    ];
 
-            // 4. Algorithme FIFO : traiter chaque besoin
-            foreach ($besoins as $besoin) {
-                $besoinId = $besoin['id'];
-                $typeBesoin = $besoin['id_type_besoin'];
-                $quantityNeed = $besoin['quantity_restante'];
+    try {
+      // 1. Récupérer les besoins non satisfaits (triés par date_besoin ASC - les plus anciens en premier)
+      $besoins = $this->donRepository->getBesoinsNonSatisfaits();
 
-                // Vérifier s'il existe des dons pour ce type de besoin
-                if (!isset($donsByType[$typeBesoin]) || empty($donsByType[$typeBesoin])) {
-                    continue;
-                }
+      // 2. Récupérer les dons non utilisés totalement (triés FIFO par date de saisie)
+      $dons = $this->donRepository->getDonsNonUtilises();
 
-                // Variable pour suivre la progression
-                $quantityRemaining = $quantityNeed;
+      // 3. Grouper les dons par libellé (case-insensitive) pour un accès rapide
+      $donsByLibelle = [];
+      foreach ($dons as $don) {
+        // Normaliser le libellé (lowercase, trim)
+        $libelleKey = $don['libelle'] === null ? '__ARGENT__' : strtolower(trim($don['libelle']));
 
-                // 5. Dispatcher les dons selon FIFO jusqu'à satisfaction du besoin
-                foreach ($donsByType[$typeBesoin] as &$don) {
-                    if ($quantityRemaining <= 0) {
-                        break; // Le besoin est complètement satisfait
-                    }
-
-                    if ($don['quantity_restante'] <= 0) {
-                        continue; // Ce don est épuisé, passer au suivant
-                    }
-
-                    $donId = $don['id'];
-                    $quantityAvailable = $don['quantity_restante'];
-
-                    // Calculer la quantité à dispatcher
-                    $quantityToDispatch = min($quantityAvailable, $quantityRemaining);
-
-                    // 6. Insertion dans la table dispatch
-                    $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
-
-                    // 7. Mise à jour des quantités restantes
-                    $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
-                    $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
-
-                    // Mettre à jour les variables locales
-                    $don['quantity_restante'] -= $quantityToDispatch;
-                    $quantityRemaining -= $quantityToDispatch;
-
-                    // Enregistrer les statistiques
-                    $stats['total_dispatches']++;
-                    $stats['total_quantity_dispatched'] += $quantityToDispatch;
-                    $stats['details'][] = [
-                        'don_id' => $donId,
-                        'besoin_id' => $besoinId,
-                        'type' => $don['type_libelle'],
-                        'ville' => $besoin['ville_nom'],
-                        'quantity' => $quantityToDispatch,
-                        'don_date' => $don['date_saisie']
-                    ];
-
-                    // Compter les dons totalement utilisés
-                    if ($don['quantity_restante'] == 0) {
-                        $stats['dons_utilises']++;
-                    }
-                }
-
-                // Compter les besoins totalement satisfaits
-                if ($quantityRemaining == 0) {
-                    $stats['besoins_satisfaits']++;
-                }
-            }
-
-            return $stats;
-
-        } catch (Exception $e) {
-            throw new Exception("Erreur lors du dispatch : " . $e->getMessage());
+        if (!isset($donsByLibelle[$libelleKey])) {
+          $donsByLibelle[$libelleKey] = [];
         }
-    }
+        $donsByLibelle[$libelleKey][] = $don;
+      }
 
-    public function createDon($idBesoin, $quantity, $dateSaisie = null)
-    {
-        if ($quantity <= 0) {
-            throw new Exception("La quantité doit être supérieure à 0");
+      // 4. Algorithme FIFO : traiter chaque besoin (du plus ancien au plus récent)
+      foreach ($besoins as $besoin) {
+        $besoinId = $besoin['id'];
+        $besoinLibelle = $besoin['libelle'];
+        $quantityNeed = $besoin['quantity_restante'];
+
+        // Normaliser le libellé du besoin
+        $libelleKey = $besoinLibelle === null ? '__ARGENT__' : strtolower(trim($besoinLibelle));
+
+        // Vérifier s'il existe des dons pour ce libellé exact
+        if (!isset($donsByLibelle[$libelleKey]) || empty($donsByLibelle[$libelleKey])) {
+          continue;
         }
 
-        if ($dateSaisie === null) {
-            $dateSaisie = date('Y-m-d');
+        // Variable pour suivre la progression
+        $quantityRemaining = $quantityNeed;
+
+        // 5. Dispatcher les dons selon FIFO jusqu'à satisfaction du besoin
+        foreach ($donsByLibelle[$libelleKey] as &$don) {
+          if ($quantityRemaining <= 0) {
+            break; // Le besoin est complètement satisfait
+          }
+
+          if ($don['quantity_restante'] <= 0) {
+            continue; // Ce don est épuisé, passer au suivant
+          }
+
+          $donId = $don['id'];
+          $quantityAvailable = $don['quantity_restante'];
+
+          // Calculer la quantité à dispatcher
+          $quantityToDispatch = min($quantityAvailable, $quantityRemaining);
+
+          // 6. Si ce n'est pas une simulation, enregistrer dans la base de données
+          if (!$isSimulation) {
+            // Insertion dans la table dispatch
+            $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
+
+            // Mise à jour des quantités restantes
+            $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
+            $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
+          }
+
+          // Mettre à jour les variables locales
+          $don['quantity_restante'] -= $quantityToDispatch;
+          $quantityRemaining -= $quantityToDispatch;
+
+          // Enregistrer les statistiques
+          $stats['total_dispatches']++;
+          $stats['total_quantity_dispatched'] += $quantityToDispatch;
+          $stats['details'][] = [
+            'don_id' => $donId,
+            'besoin_id' => $besoinId,
+            'type' => $don['type_libelle'],
+            'libelle' => $don['libelle'] ?? 'Argent',
+            'ville' => $besoin['ville_nom'],
+            'besoin_libelle' => $besoin['libelle'] ?? 'Argent',
+            'besoin_date' => $besoin['date_besoin'],
+            'quantity' => $quantityToDispatch,
+            'don_date' => $don['date_saisie']
+          ];
+
+          // Compter les dons totalement utilisés
+          if ($don['quantity_restante'] == 0) {
+            $stats['dons_utilises']++;
+          }
         }
 
-        return $this->donRepository->createDon($idBesoin, $quantity, $dateSaisie);
+        // Compter les besoins totalement satisfaits
+        if ($quantityRemaining == 0) {
+          $stats['besoins_satisfaits']++;
+        }
+      }
+
+      return $stats;
+
+    } catch (Exception $e) {
+      throw new Exception("Erreur lors du dispatch : " . $e->getMessage());
+    }
+  }
+
+  /**
+   * Crée un nouveau don (sans besoin spécifique)
+   * Les dons spécifient ce qui est donné : Riz, Eau, Huile, etc.
+   * Pour l'argent, libelle = NULL
+   */
+  public function createDon($idTypeBesoin, $libelle, $quantity, $dateSaisie = null)
+  {
+    if ($quantity <= 0) {
+      throw new Exception("La quantité doit être supérieure à 0");
     }
 
-    public function getAllDons()
-    {
-        return $this->donRepository->getAllDons();
+    if ($dateSaisie === null) {
+      $dateSaisie = date('Y-m-d');
     }
 
-    public function getDispatchHistory()
-    {
-        return $this->donRepository->getDispatchHistory();
-    }
+    return $this->donRepository->createDon($idTypeBesoin, $libelle, $quantity, $dateSaisie);
+  }
 
-    public function getReport()
-    {
-        $besoins = $this->donRepository->getBesoinsNonSatisfaits();
-        $dons = $this->donRepository->getDonsNonUtilises();
+  public function getAllDons()
+  {
+    return $this->donRepository->getAllDons();
+  }
 
-        $report = [
-            'besoins_non_satisfaits' => [
-                'count' => count($besoins),
-                'total_quantity' => array_sum(array_column($besoins, 'quantity_restante')),
-                'details' => $besoins
-            ],
-            'dons_non_utilises' => [
-                'count' => count($dons),
-                'total_quantity' => array_sum(array_column($dons, 'quantity_restante')),
-                'details' => $dons
-            ]
-        ];
+  public function getDispatchHistory()
+  {
+    return $this->donRepository->getDispatchHistory();
+  }
 
-        return $report;
-    }
+  public function getReport()
+  {
+    $besoins = $this->donRepository->getBesoinsNonSatisfaits();
+    $dons = $this->donRepository->getDonsNonUtilises();
 
-     public function getDashboardData(): array
-    {
-        return [
-            'villes' => $this->donRepository->getVillesWithBesoinStats(),
-            'totaux' => $this->donRepository->getGlobalDonTotals(),
-        ];
-    }
+    $report = [
+      'besoins_non_satisfaits' => [
+        'count' => count($besoins),
+        'total_quantity' => array_sum(array_column($besoins, 'quantity_restante')),
+        'details' => $besoins
+      ],
+      'dons_non_utilises' => [
+        'count' => count($dons),
+        'total_quantity' => array_sum(array_column($dons, 'quantity_restante')),
+        'details' => $dons
+      ]
+    ];
+
+    return $report;
+  }
+
+  public function getDashboardData(): array
+  {
+    return [
+      'villes' => $this->donRepository->getVillesWithBesoinsAndDons(),
+      'totaux' => $this->donRepository->getGlobalDonTotals(),
+    ];
+  }
+
+  /**
+   * Récupère les statistiques de récapitulation
+   */
+  public function getRecapStatistics(): array
+  {
+    return $this->donRepository->getRecapStatistics();
+  }
 }
