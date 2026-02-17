@@ -159,6 +159,119 @@ class DonService
     }
   }
 
+  private function executeDispatcCroissant(){
+    $stats = [
+      'total_dispatches' => 0,
+      'total_quantity_dispatched' => 0,
+      'besoins_satisfaits' => 0,
+      'dons_utilises' => 0,
+      'details' => [],
+    ];
+
+    try {
+      $besoins = $this->donRepository->getBesoinsNonSatisfaits();
+      $dons = $this->donRepository->getDonsNonUtilises();
+
+      usort($besoins, function ($a, $b) {
+        $cmp = $a['quantity_restante'] <=> $b['quantity_restante'];
+        if ($cmp !== 0) {
+          return $cmp;
+        }
+        $cmp = strcmp($a['date_besoin'], $b['date_besoin']);
+        if ($cmp !== 0) {
+          return $cmp;
+        }
+        return $a['id'] <=> $b['id'];
+      });
+
+      $donsByLibelle = [];
+      foreach ($dons as $don) {
+        $libelleKey = $don['libelle'] === null ? '__ARGENT__' : strtolower(trim($don['libelle']));
+
+        if (!isset($donsByLibelle[$libelleKey])) {
+          $donsByLibelle[$libelleKey] = [];
+        }
+        $donsByLibelle[$libelleKey][] = $don;
+      }
+
+      foreach ($donsByLibelle as $libelleKey => $donsList) {
+        usort($donsList, function ($a, $b) {
+          $cmp = $a['quantity_restante'] <=> $b['quantity_restante'];
+          if ($cmp !== 0) {
+            return $cmp;
+          }
+          $cmp = strcmp($a['date_saisie'], $b['date_saisie']);
+          if ($cmp !== 0) {
+            return $cmp;
+          }
+          return $a['id'] <=> $b['id'];
+        });
+        $donsByLibelle[$libelleKey] = $donsList;
+      }
+
+      foreach ($besoins as $besoin) {
+        $besoinId = $besoin['id'];
+        $besoinLibelle = $besoin['libelle'];
+        $quantityNeed = $besoin['quantity_restante'];
+
+        $libelleKey = $besoinLibelle === null ? '__ARGENT__' : strtolower(trim($besoinLibelle));
+
+        if (!isset($donsByLibelle[$libelleKey]) || empty($donsByLibelle[$libelleKey])) {
+          continue;
+        }
+
+        $quantityRemaining = $quantityNeed;
+
+        foreach ($donsByLibelle[$libelleKey] as &$don) {
+          if ($quantityRemaining <= 0) {
+            break;
+          }
+
+          if ($don['quantity_restante'] <= 0) {
+            continue;
+          }
+
+          $donId = $don['id'];
+          $quantityAvailable = $don['quantity_restante'];
+          $quantityToDispatch = min($quantityAvailable, $quantityRemaining);
+
+          $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
+          $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
+          $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
+
+          $don['quantity_restante'] -= $quantityToDispatch;
+          $quantityRemaining -= $quantityToDispatch;
+
+          $stats['total_dispatches']++;
+          $stats['total_quantity_dispatched'] += $quantityToDispatch;
+          $stats['details'][] = [
+            'don_id' => $donId,
+            'besoin_id' => $besoinId,
+            'type' => $don['type_libelle'],
+            'libelle' => $don['libelle'] ?? 'Argent',
+            'ville' => $besoin['ville_nom'],
+            'besoin_libelle' => $besoin['libelle'] ?? 'Argent',
+            'besoin_date' => $besoin['date_besoin'],
+            'quantity' => $quantityToDispatch,
+            'don_date' => $don['date_saisie']
+          ];
+
+          if ($don['quantity_restante'] == 0) {
+            $stats['dons_utilises']++;
+          }
+        }
+
+        if ($quantityRemaining == 0) {
+          $stats['besoins_satisfaits']++;
+        }
+      }
+
+      return $stats;
+    } catch (Exception $e) {
+      throw new Exception("Erreur lors du dispatch croissant : " . $e->getMessage());
+    }
+  }
+
   /**
    * Crée un nouveau don (sans besoin spécifique)
    * Les dons spécifient ce qui est donné : Riz, Eau, Huile, etc.
