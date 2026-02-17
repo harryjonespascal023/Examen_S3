@@ -21,7 +21,7 @@ class BesoinRepository
       'FROM BNR_besoin b ' .
       'INNER JOIN BNR_ville v ON v.id = b.id_ville ' .
       'INNER JOIN BNR_type_besoin t ON t.id = b.id_type_besoin ' .
-      'ORDER BY b.date_besoin DESC, b.id DESC'
+      'ORDER BY b.id DESC'
     );
   }
 
