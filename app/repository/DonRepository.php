@@ -38,7 +38,9 @@ class DonRepository
   {
     $query = "SELECT d.*, t.libelle as type_libelle
                   FROM BNR_don d
-                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
+                  INNER JOIN BNR_besoin b ON d.id_besoin = b.id
+                  INNER JOIN BNR_ville v ON b.id_ville = v.id
+                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   WHERE d.quantity_restante > 0
                   ORDER BY d.date_saisie ASC, d.id ASC";
 
@@ -140,7 +142,9 @@ class DonRepository
   {
     $query = "SELECT d.*, t.libelle as type_libelle
                   FROM BNR_don d
-                  INNER JOIN BNR_type_besoin t ON d.id_type_besoin = t.id
+                  INNER JOIN BNR_besoin b ON d.id_besoin = b.id
+                  INNER JOIN BNR_ville v ON b.id_ville = v.id
+                  INNER JOIN BNR_type_besoin t ON b.id_type_besoin = t.id
                   ORDER BY d.date_saisie DESC";
 
     $result = $this->db->query($query);
