@@ -256,6 +256,7 @@ class DonService
         }
       }
     }
+    
 
     return $stats;
   }
