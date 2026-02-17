@@ -38,7 +38,7 @@ include __DIR__ . '/includes/header.php';
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ($besoins as $besoin) : 
+						<?php foreach ($besoins as $besoin) :
 							$pourcentage = $besoin->quantity > 0 ? (($besoin->quantity - $besoin->quantity_restante) / $besoin->quantity * 100) : 0;
 						?>
 							<tr>

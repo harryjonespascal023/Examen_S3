@@ -32,7 +32,7 @@ include __DIR__ . '/includes/header.php';
 				<label class="form-label" for="libelle">
 					<i class="bi bi-tag"></i> Libellé du type de besoin *
 				</label>
-				<input class="form-control" id="libelle" name="libelle" type="text" required 
+				<input class="form-control" id="libelle" name="libelle" type="text" required
 					   value="<?php echo htmlspecialchars($libelleValue, ENT_QUOTES, 'UTF-8'); ?>"
 					   placeholder="Ex: Eau, Nourriture, Vêtements, Médicaments...">
 				<small class="form-text text-muted">

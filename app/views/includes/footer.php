@@ -1,6 +1,6 @@
         </div>
     </div>
-    
+
     <footer class="bg-dark text-white mt-5">
         <div class="container-fluid py-4">
             <div class="row">
@@ -69,8 +69,8 @@
             <div class="row">
                 <div class="col-12 text-center">
                     <p class="mb-0 text-muted small">
-                        &copy; <?= date('Y') ?> BNGRC - Tous droits réservés | 
-                        Système de gestion des dons v2.0 | 
+                        &copy; <?= date('Y') ?> BNGRC - Tous droits réservés |
+                        Système de gestion des dons v2.0 |
                         <i class="bi bi-heart-fill text-danger"></i> Développé avec passion
                     </p>
                 </div>

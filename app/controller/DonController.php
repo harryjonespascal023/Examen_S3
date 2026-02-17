@@ -24,7 +24,7 @@ class DonController
         $besoins = $this->donService->getBesoinsDisponibles();
         $message = Flight::request()->query->message ?? null;
         $messageType = Flight::request()->query->type ?? 'info';
-        
+
         Flight::render('dons/index', [
             'dons' => $dons,
             'report' => $report,

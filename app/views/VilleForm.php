@@ -34,7 +34,7 @@ include __DIR__ . '/includes/header.php';
                 <label class="form-label" for="nom">
                     <i class="bi bi-geo-alt"></i> Nom de la ville *
                 </label>
-                <input class="form-control" id="nom" name="nom" type="text" required 
+                <input class="form-control" id="nom" name="nom" type="text" required
                        value="<?php echo htmlspecialchars($nomValue, ENT_QUOTES, 'UTF-8'); ?>"
                        placeholder="Entrez le nom de la ville">
             </div>
@@ -42,7 +42,7 @@ include __DIR__ . '/includes/header.php';
                 <label class="form-label" for="nombre_sinistres">
                     <i class="bi bi-exclamation-triangle"></i> Nombre de sinistres *
                 </label>
-                <input class="form-control" id="nombre_sinistres" name="nombre_sinistres" 
+                <input class="form-control" id="nombre_sinistres" name="nombre_sinistres"
                        type="number" min="0" required value="<?php echo (int)$nombreValue; ?>"
                        placeholder="Entrez le nombre de sinistres">
                 <small class="form-text text-muted">

@@ -36,7 +36,7 @@ class DonService
         try {
             // 1. Récupérer les besoins non satisfaits
             $besoins = $this->donRepository->getBesoinsNonSatisfaits();
-            
+
             // 2. Récupérer les dons non utilisés totalement (triés FIFO par date de saisie)
             $dons = $this->donRepository->getDonsNonUtilises();
 

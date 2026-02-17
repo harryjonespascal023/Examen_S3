@@ -10,7 +10,7 @@
     <div class="container">
         <?php if (isset($message) && $message): ?>
             <div class="alert alert-<?= htmlspecialchars($messageType) ?> alert-dismissible fade show" role="alert">
-                <strong><?= $messageType === 'success' ? 'Succès!' : 'Erreur!' ?></strong> 
+                <strong><?= $messageType === 'success' ? 'Succès!' : 'Erreur!' ?></strong>
                 <?= htmlspecialchars($message) ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -52,7 +52,7 @@
                     <div class="card-body">
                         <i class="bi bi-arrow-repeat" style="font-size: 3rem;"></i>
                         <form method="POST" action="/dons/dispatch" class="mt-2">
-                            <button type="submit" class="btn btn-light btn-lg" 
+                            <button type="submit" class="btn btn-light btn-lg"
                                     <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
                                 Dispatch
                             </button>
@@ -79,9 +79,9 @@
                                     <option value="">Sélectionner un besoin...</option>
                                     <?php foreach ($besoins as $besoin): ?>
                                         <option value="<?= $besoin['id'] ?>">
-                                            <?= htmlspecialchars($besoin['libelle']) ?> - 
-                                            <?= htmlspecialchars($besoin['ville_nom']) ?> 
-                                            (<?= htmlspecialchars($besoin['type_libelle']) ?>) - 
+                                            <?= htmlspecialchars($besoin['libelle']) ?> -
+                                            <?= htmlspecialchars($besoin['ville_nom']) ?>
+                                            (<?= htmlspecialchars($besoin['type_libelle']) ?>) -
                                             Restant: <?= $besoin['quantity_restante'] ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -94,14 +94,14 @@
                                 <label for="quantity" class="form-label">
                                     <i class="bi bi-box"></i> Quantité *
                                 </label>
-                                <input type="number" class="form-control" id="quantity" name="quantity" 
+                                <input type="number" class="form-control" id="quantity" name="quantity"
                                        min="1" required placeholder="Entrer la quantité à donner">
                             </div>
                             <div class="mb-3">
                                 <label for="date_saisie" class="form-label">
                                     <i class="bi bi-calendar-event"></i> Date de Saisie *
                                 </label>
-                                <input type="date" class="form-control" id="date_saisie" name="date_saisie" 
+                                <input type="date" class="form-control" id="date_saisie" name="date_saisie"
                                        value="<?= date('Y-m-d') ?>" required>
                             </div>
                             <div class="d-grid">
@@ -210,7 +210,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($dons as $don): 
+                                        <?php foreach ($dons as $don):
                                             $pourcentage = $don['quantity'] > 0 ? (($don['quantity'] - $don['quantity_restante']) / $don['quantity'] * 100) : 0;
                                         ?>
                                             <tr>

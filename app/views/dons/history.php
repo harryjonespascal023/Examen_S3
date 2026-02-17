@@ -89,9 +89,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php 
+                                        <?php
                                         $currentDate = '';
-                                        foreach ($history as $dispatch): 
+                                        foreach ($history as $dispatch):
                                             $dispatchDate = date('d/m/Y', strtotime($dispatch['date_dispatch']));
                                             $showDateSeparator = $dispatchDate !== $currentDate;
                                             $currentDate = $dispatchDate;
@@ -124,7 +124,7 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <i class="bi bi-geo-alt-fill text-danger"></i> 
+                                                    <i class="bi bi-geo-alt-fill text-danger"></i>
                                                     <?= htmlspecialchars($dispatch['ville_nom']) ?>
                                                 </td>
                                                 <td class="text-end">
@@ -157,7 +157,7 @@
                             <h6 class="mb-0"><i class="bi bi-box-seam"></i> Par Type de Besoin</h6>
                         </div>
                         <div class="card-body">
-                            <?php 
+                            <?php
                             $byType = [];
                             foreach ($history as $dispatch) {
                                 $type = $dispatch['type_libelle'];
@@ -186,7 +186,7 @@
                             <h6 class="mb-0"><i class="bi bi-geo-alt"></i> Par Ville</h6>
                         </div>
                         <div class="card-body">
-                            <?php 
+                            <?php
                             $byVille = [];
                             foreach ($history as $dispatch) {
                                 $ville = $dispatch['ville_nom'];

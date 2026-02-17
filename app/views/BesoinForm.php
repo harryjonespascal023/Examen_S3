@@ -10,6 +10,7 @@ $prixUnitaireValue = 0;
 $quantityValue = 0;
 $quantityRestanteValue = 0;
 $libelleValue = '';
+$dateBesoinValue = date('Y-m-d');
 
 if (!empty($besoin)) {
 	$idVilleValue = (int)$besoin->id_ville;
@@ -74,7 +75,7 @@ include __DIR__ . '/includes/header.php';
 				<label class="form-label" for="libelle">
 					<i class="bi bi-journal-text"></i> Libellé *
 				</label>
-				<input class="form-control" id="libelle" name="libelle" type="text" required 
+				<input class="form-control" id="libelle" name="libelle" type="text" required
 					   value="<?php echo htmlspecialchars($libelleValue, ENT_QUOTES, 'UTF-8'); ?>"
 					   placeholder="Description spécifique du besoin">
 				<small class="form-text text-muted">
@@ -86,8 +87,8 @@ include __DIR__ . '/includes/header.php';
 					<label class="form-label" for="prix_unitaire">
 						<i class="bi bi-currency-dollar"></i> Prix unitaire (Ar) *
 					</label>
-					<input class="form-control" id="prix_unitaire" name="prix_unitaire" 
-						   type="number" step="0.01" min="0" required 
+					<input class="form-control" id="prix_unitaire" name="prix_unitaire"
+						   type="number" step="0.01" min="0" required
 						   value="<?php echo htmlspecialchars((string)$prixUnitaireValue, ENT_QUOTES, 'UTF-8'); ?>"
 						   placeholder="0.00">
 				</div>
@@ -95,7 +96,7 @@ include __DIR__ . '/includes/header.php';
 					<label class="form-label" for="quantity">
 						<i class="bi bi-box"></i> Quantité *
 					</label>
-					<input class="form-control" id="quantity" name="quantity" type="number" min="0" required 
+					<input class="form-control" id="quantity" name="quantity" type="number" min="0" required
 						   value="<?php echo (int)$quantityValue; ?>"
 						   placeholder="0">
 				</div>
@@ -103,8 +104,8 @@ include __DIR__ . '/includes/header.php';
 					<label class="form-label" for="quantity_restante">
 						<i class="bi bi-boxes"></i> Quantité restante *
 					</label>
-					<input class="form-control" id="quantity_restante" name="quantity_restante" 
-						   type="number" min="0" required 
+					<input class="form-control" id="quantity_restante" name="quantity_restante"
+						   type="number" min="0" required
 						   value="<?php echo (int)$quantityRestanteValue; ?>"
 						   placeholder="0">
 					<small class="form-text text-muted">
@@ -123,6 +124,50 @@ include __DIR__ . '/includes/header.php';
 		</form>
 	</div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect = document.getElementById('id_type_besoin');
+    const libelleInput = document.getElementById('libelle');
+    const libelleRequired = document.getElementById('libelleRequired');
+    const libelleHelp = document.getElementById('libelleHelp');
+    const prixInput = document.getElementById('prix_unitaire');
+    const prixContainer = document.getElementById('prix_unitaire').closest('.col-md-4');
+    const prixRequired = document.querySelector('.prix-required');
+
+    function updateFields() {
+      const selectedOption = typeSelect.options[typeSelect.selectedIndex];
+      const typeLibelle = selectedOption ? selectedOption.getAttribute('data-libelle') : '';
+
+      if (typeLibelle === 'argent') {
+        // Masquer libellé et prix pour argent
+        libelleInput.required = false;
+        libelleRequired.style.display = 'none';
+        libelleInput.placeholder = 'Pas de libellé pour l\'argent';
+        libelleHelp.textContent = 'Les besoins en argent n\'ont pas de libellé';
+        libelleInput.value = '';
+
+        prixInput.required = false;
+        prixInput.value = '';
+        prixContainer.style.display = 'none';
+        if (prixRequired) prixRequired.style.display = 'none';
+      } else {
+        // Afficher libellé et prix pour nature/matériaux
+        libelleInput.required = true;
+        libelleRequired.style.display = 'inline';
+        libelleInput.placeholder = 'Description spécifique du besoin';
+        libelleHelp.textContent = 'Exemple: "Eau potable pour école primaire de Tanambao"';
+
+        prixInput.required = true;
+        prixContainer.style.display = '';
+        if (prixRequired) prixRequired.style.display = 'inline';
+      }
+    }
+
+    typeSelect.addEventListener('change', updateFields);
+    updateFields();
+  });
+</script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
 
