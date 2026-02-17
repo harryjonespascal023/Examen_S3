@@ -17,7 +17,7 @@ if (!isset($totaux)) {
 
 <div class="page-header mb-4">
   <h1 class="display-5 fw-bold">
-    <i class="bi bi-speedometer2"></i> Dashboard
+    <i class="bi bi-speedometer2"></i> Tableau de bord
   </h1>
   <p class="lead text-muted">Vue d'ensemble des dons et besoins par ville</p>
 </div>
