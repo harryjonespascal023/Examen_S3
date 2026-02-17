@@ -38,8 +38,10 @@
           <div class="alert alert-info mb-0">
             <i class="bi bi-lightbulb"></i> <strong>Modes de dispatch :</strong>
             <ul class="mb-0 mt-2">
-              <li><strong>Par date (FIFO) :</strong> Les besoins les plus anciens sont satisfaits en premier, avec les dons les plus anciens</li>
-              <li><strong>Par quantité croissante :</strong> Les petits besoins ET les petits dons sont prioritaires</li>
+              <li><strong>Par date (FIFO) :</strong> Les besoins les plus anciens sont satisfaits en premier, avec les
+                dons les plus anciens</li>
+              <li><strong>Par quantité croissante :</strong> Les petits besoins ET les petits dons sont prioritaires
+              </li>
             </ul>
           </div>
         </div>
@@ -257,16 +259,21 @@
           <p class="mb-2"><strong>Comment ça fonctionne ?</strong></p>
           <ol class="mb-2">
             <li>Les dons sont enregistrés par type (eau, riz, argent, etc.) sans préciser la destination</li>
-            <li><strong>Mode par date (FIFO) :</strong> Besoins triés par date (plus anciens en premier), dons triés par date de saisie</li>
-            <li><strong>Mode par quantité croissante :</strong> Besoins ET dons triés par quantité restante (plus petits en premier)</li>
+            <li><strong>Mode par date (FIFO) :</strong> Besoins triés par date (plus anciens en premier), dons triés par
+              date de saisie</li>
+            <li><strong>Mode par quantité croissante :</strong> Besoins ET dons triés par quantité restante (plus petits
+              en premier)</li>
             <li>Le dispatch distribue les dons selon le mode sélectionné</li>
-            <li><strong>Exemple mode date :</strong> 200 kg de riz → Ville B (besoin du 10/02) reçoit le don du 05/02 en priorité</li>
-            <li><strong>Exemple mode quantité :</strong> 200 kg de riz → Ville A (50 kg restants) reçoit un petit don (30 kg) en priorité</li>
+            <li><strong>Exemple mode date :</strong> 200 kg de riz → Ville B (besoin du 10/02) reçoit le don du 05/02 en
+              priorité</li>
+            <li><strong>Exemple mode quantité :</strong> 200 kg de riz → Ville A (50 kg restants) reçoit un petit don
+              (30 kg) en priorité</li>
           </ol>
           <p class="mb-0 text-primary">
             <i class="bi bi-star-fill"></i> <strong>Conseil :</strong> Utilisez le mode <strong>par date</strong> pour
             respecter l'ordre chronologique (équitable),
-            ou le mode <strong>par quantité</strong> pour maximiser le nombre de besoins complètement satisfaits (efficace).
+            ou le mode <strong>par quantité</strong> pour maximiser le nombre de besoins complètement satisfaits
+            (efficace).
           </p>
         </div>
       </div>
