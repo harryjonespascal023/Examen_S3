@@ -22,7 +22,7 @@ class VilleController
 	{
 		Flight::render('VilleForm', [
 			'ville' => null,
-			'action' => '/villes',
+			'action' =>  BASE_URL.'/villes',
 			'title' => 'Ajouter une ville',
 			'submitLabel' => 'Ajouter',
 		]);

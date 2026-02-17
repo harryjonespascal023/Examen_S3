@@ -20,14 +20,14 @@ class DonController
   {
     $dons = $this->donService->getAllDons();
     $report = $this->donService->getReport();
-    $besoinsDisponibles = $this->donService->getBesoinsDisponibles();
+    $typesBesoin = $this->donService->getAllTypesBesoin();
     $message = Flight::request()->query->message ?? null;
     $messageType = Flight::request()->query->type ?? 'info';
 
     Flight::render('dons/index', [
       'dons' => $dons,
       'report' => $report,
-      'besoinsDisponibles' => $besoinsDisponibles,
+      'typesBesoin' => $typesBesoin,
       'message' => $message,
       'messageType' => $messageType
     ]);
@@ -36,12 +36,13 @@ class DonController
   public function createForm()
   {
     try {
-      $idBesoin = Flight::request()->data->id_besoin ?? null;
+      $idTypeBesoin = Flight::request()->data->id_type_besoin ?? null;
+      $libelle = trim(Flight::request()->data->libelle ?? '');
       $quantity = Flight::request()->data->quantity ?? null;
       $dateSaisie = Flight::request()->data->date_saisie ?? date('Y-m-d');
 
-      if (!$idBesoin || !$quantity) {
-        Flight::redirect('/dons?message=' . urlencode('Besoin et quantité requis') . '&type=danger');
+      if (!$idTypeBesoin || !$quantity) {
+        Flight::redirect('/dons?message=' . urlencode('Type de besoin et quantité requis') . '&type=danger');
         return;
       }
 
@@ -50,7 +51,10 @@ class DonController
         return;
       }
 
-      $donId = $this->donService->createDon($idBesoin, $quantity, $dateSaisie);
+      // Si le libellé est vide, mettre NULL (pour l'argent)
+      $libelle = empty($libelle) ? null : $libelle;
+
+      $donId = $this->donService->createDon($idTypeBesoin, $libelle, $quantity, $dateSaisie);
       Flight::redirect('/dons?message=' . urlencode('Don créé avec succès (ID: ' . $donId . ')') . '&type=success');
 
     } catch (Exception $e) {
@@ -73,6 +77,45 @@ class DonController
       Flight::redirect('/dons?message=' . urlencode('Erreur dispatch: ' . $e->getMessage()) . '&type=danger');
     }
   }
+
+  /**
+   * Page de simulation
+   */
+  public function simulationPage()
+  {
+    $message = Flight::request()->query->message ?? null;
+    $messageType = Flight::request()->query->type ?? 'info';
+
+    Flight::render('dons/simulation', [
+      'message' => $message,
+      'messageType' => $messageType,
+      'simulationResult' => null
+    ]);
+  }
+
+  /**
+   * Exécute une simulation du dispatch
+   */
+  public function simulate()
+  {
+    try {
+      $stats = $this->donService->simulateDispatch();
+
+      Flight::render('dons/simulation', [
+        'message' => 'Simulation terminée avec succès',
+        'messageType' => 'success',
+        'simulationResult' => $stats
+      ]);
+
+    } catch (Exception $e) {
+      Flight::render('dons/simulation', [
+        'message' => 'Erreur simulation: ' . $e->getMessage(),
+        'messageType' => 'danger',
+        'simulationResult' => null
+      ]);
+    }
+  }
+
   public function history()
   {
     try {
@@ -86,6 +129,50 @@ class DonController
       Flight::json([
         'success' => false,
         'message' => 'Erreur lors de la récupération de l\'historique : ' . $e->getMessage()
+      ], 500);
+    }
+  }
+
+  public function dashboard(): void
+  {
+    $data = $this->donService->getDashboardData();
+
+    Flight::render('dashboard', [
+      'villes' => $data['villes'] ?? [],
+      'totaux' => $data['totaux'] ?? [
+        'total_recus' => 0,
+        'total_attribues' => 0,
+        'total_reste' => 0,
+      ],
+    ]);
+  }
+
+  /**
+   * Page de récapitulation
+   */
+  public function recapitulation(): void
+  {
+    $stats = $this->donService->getRecapStatistics();
+
+    Flight::render('dons/recapitulation', [
+      'stats' => $stats
+    ]);
+  }
+
+  public function recapitulationAjax(): void
+  {
+    try {
+      $stats = $this->donService->getRecapStatistics();
+
+      Flight::json([
+        'success' => true,
+        'data' => $stats
+      ]);
+
+    } catch (Exception $e) {
+      Flight::json([
+        'success' => false,
+        'message' => 'Erreur lors de la récupération des statistiques : ' . $e->getMessage()
       ], 500);
     }
   }

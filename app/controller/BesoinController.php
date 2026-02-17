@@ -9,95 +9,107 @@ use Flight;
 
 class BesoinController
 {
-	private function service(): BesoinService
-	{
-		return new BesoinService(new BesoinRepository(Flight::db()));
-	}
+  private function service(): BesoinService
+  {
+    return new BesoinService(new BesoinRepository(Flight::db()));
+  }
 
-	private function villeRepository(): VilleRepository
-	{
-		return new VilleRepository(Flight::db());
-	}
+  private function villeRepository(): VilleRepository
+  {
+    return new VilleRepository(Flight::db());
+  }
 
-	private function typeRepository(): TypeBesoinRepository
-	{
-		return new TypeBesoinRepository(Flight::db());
-	}
+  private function typeRepository(): TypeBesoinRepository
+  {
+    return new TypeBesoinRepository(Flight::db());
+  }
 
-	public function index(): void
-	{
-		$besoins = $this->service()->getAll();
-		Flight::render('ListBesoin', ['besoins' => $besoins]);
-	}
+  public function index(): void
+  {
+    $besoins = $this->service()->getAll();
+    Flight::render('ListBesoin', ['besoins' => $besoins]);
+  }
 
-	public function createForm(): void
-	{
-		$villes = $this->villeRepository()->all();
-		$types = $this->typeRepository()->all();
+  public function createForm(): void
+  {
+    $villes = $this->villeRepository()->all();
+    $types = $this->typeRepository()->all();
 
-		Flight::render('BesoinForm', [
-			'besoin' => null,
-			'villes' => $villes,
-			'types' => $types,
-			'action' => '/besoins',
-			'title' => 'Ajouter un besoin',
-			'submitLabel' => 'Ajouter',
-		]);
-	}
+    Flight::render('BesoinForm', [
+      'besoin' => null,
+      'villes' => $villes,
+      'types' => $types,
+      'action' => '/besoins',
+      'title' => 'Ajouter un besoin',
+      'submitLabel' => 'Ajouter',
+    ]);
+  }
 
-	public function store(): void
-	{
-		$request = Flight::request();
-		$idVille = (int)($request->data->id_ville ?? 0);
-		$idType = (int)($request->data->id_type_besoin ?? 0);
-		$prixUnitaire = (float)($request->data->prix_unitaire ?? 0);
-		$quantity = (int)($request->data->quantity ?? 0);
-		$quantityRestante = (int)($request->data->quantity_restante ?? $quantity);
-		$libelle = trim((string)($request->data->libelle ?? ''));
+  public function store(): void
+  {
+    $request = Flight::request();
+    $idVille = (int) ($request->data->id_ville ?? 0);
+    $idType = (int) ($request->data->id_type_besoin ?? 0);
+    $quantity = (int) ($request->data->quantity ?? 0);
+    $quantityRestante = (int) ($request->data->quantity_restante ?? $quantity);
+    $dateBesoin = trim((string) ($request->data->date_besoin ?? date('Y-m-d')));
 
-		$this->service()->create($idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle);
-		Flight::redirect('/besoins');
-	}
+    // Récupérer le type pour vérifier s'il s'agit d'argent
+    $typeBesoin = $this->typeRepository()->find($idType);
+    $isArgent = $typeBesoin && strtolower($typeBesoin->libelle) === 'argent';
 
-	public function editForm($id): void
-	{
-		$besoin = $this->service()->getById((int)$id);
-		if ($besoin === null) {
-			Flight::redirect('/besoins');
-			return;
-		}
+    $prixUnitaire = $isArgent ? null : (float) ($request->data->prix_unitaire ?? 0);
+    $libelle = $isArgent ? null : trim((string) ($request->data->libelle ?? ''));
 
-		$villes = $this->villeRepository()->all();
-		$types = $this->typeRepository()->all();
+    $this->service()->create($idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle, $dateBesoin);
+    Flight::redirect('/besoins');
+  }
 
-		Flight::render('BesoinForm', [
-			'besoin' => $besoin,
-			'villes' => $villes,
-			'types' => $types,
-			'action' => '/besoins/' . (int)$id . '/update',
-			'title' => 'Modifier un besoin',
-			'submitLabel' => 'Modifier',
-		]);
-	}
+  public function editForm($id): void
+  {
+    $besoin = $this->service()->getById((int) $id);
+    if ($besoin === null) {
+      Flight::redirect('/besoins');
+      return;
+    }
 
-	public function update($id): void
-	{
-		$request = Flight::request();
-		$idVille = (int)($request->data->id_ville ?? 0);
-		$idType = (int)($request->data->id_type_besoin ?? 0);
-		$prixUnitaire = (float)($request->data->prix_unitaire ?? 0);
-		$quantity = (int)($request->data->quantity ?? 0);
-		$quantityRestante = (int)($request->data->quantity_restante ?? $quantity);
-		$libelle = trim((string)($request->data->libelle ?? ''));
+    $villes = $this->villeRepository()->all();
+    $types = $this->typeRepository()->all();
 
-		$this->service()->update((int)$id, $idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle);
-		Flight::redirect('/besoins');
-	}
+    Flight::render('BesoinForm', [
+      'besoin' => $besoin,
+      'villes' => $villes,
+      'types' => $types,
+      'action' => '/besoins/' . (int) $id . '/update',
+      'title' => 'Modifier un besoin',
+      'submitLabel' => 'Modifier',
+    ]);
+  }
 
-	public function delete($id): void
-	{
-		$this->service()->delete((int)$id);
-		Flight::redirect('/besoins');
-	}
+  public function update($id): void
+  {
+    $request = Flight::request();
+    $idVille = (int) ($request->data->id_ville ?? 0);
+    $idType = (int) ($request->data->id_type_besoin ?? 0);
+    $quantity = (int) ($request->data->quantity ?? 0);
+    $quantityRestante = (int) ($request->data->quantity_restante ?? $quantity);
+    $dateBesoin = trim((string) ($request->data->date_besoin ?? date('Y-m-d')));
+
+    // Récupérer le type pour vérifier s'il s'agit d'argent
+    $typeBesoin = $this->typeRepository()->find($idType);
+    $isArgent = $typeBesoin && strtolower($typeBesoin->libelle) === 'argent';
+
+    $prixUnitaire = $isArgent ? null : (float) ($request->data->prix_unitaire ?? 0);
+    $libelle = $isArgent ? null : trim((string) ($request->data->libelle ?? ''));
+
+    $this->service()->update((int) $id, $idVille, $idType, $prixUnitaire, $quantity, $quantityRestante, $libelle, $dateBesoin);
+    Flight::redirect('/besoins');
+  }
+
+  public function delete($id): void
+  {
+    $this->service()->delete((int) $id);
+    Flight::redirect('/besoins');
+  }
 }
 

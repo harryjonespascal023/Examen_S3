@@ -1,59 +1,109 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Liste des besoins</title>
-	<link rel="stylesheet" href="/assets/css/bootstrap.min.css">
-	<link rel="stylesheet" href="/assets/css/modern-theme.css">
-</head>
-<body>
-	<div class="container py-4">
-		<div class="d-flex align-items-center justify-content-between mb-4">
-			<h1 class="h3 mb-0">Liste des besoins</h1>
-			<a class="btn btn-primary" href="/besoins/create">Ajouter besoin</a>
-		</div>
+<?php
+$pageTitle = 'Liste des Besoins - BNGRC';
+$currentPage = 'besoins';
+include __DIR__ . '/includes/header.php';
+?>
 
-		<?php if (empty($besoins)) : ?>
-			<div class="alert alert-info">Aucun besoin enregistre.</div>
-		<?php else : ?>
-			<div class="table-responsive">
-				<table class="table table-striped align-middle">
-					<thead>
-						<tr>
-							<th scope="col">ID</th>
-							<th scope="col">Ville</th>
-							<th scope="col">Type</th>
-							<th scope="col">Libelle</th>
-							<th scope="col">Prix unitaire</th>
-							<th scope="col">Quantite</th>
-							<th scope="col">Restant</th>
-							<th scope="col" class="text-end">Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ($besoins as $besoin) : ?>
-							<tr>
-								<td><?php echo (int)$besoin->id; ?></td>
-								<td><?php echo htmlspecialchars((string)$besoin->ville_nom, ENT_QUOTES, 'UTF-8'); ?></td>
-								<td><?php echo htmlspecialchars((string)$besoin->type_libelle, ENT_QUOTES, 'UTF-8'); ?></td>
-								<td><?php echo htmlspecialchars((string)($besoin->libelle ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-								<td><?php echo number_format((float)$besoin->prix_unitaire, 2, '.', ''); ?></td>
-								<td><?php echo (int)$besoin->quantity; ?></td>
-								<td><?php echo (int)$besoin->quantity_restante; ?></td>
-								<td class="text-end">
-									<a class="btn btn-sm btn-outline-secondary" href="/besoins/<?php echo (int)$besoin->id; ?>/edit">Modifier</a>
-									<form class="d-inline" method="post" action="/besoins/<?php echo (int)$besoin->id; ?>/delete" onsubmit="return confirm('Supprimer ce besoin ?');">
-										<button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
-									</form>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
-		<?php endif; ?>
-	</div>
-</body>
-</html>
+<div class="page-header">
+  <div class="d-flex align-items-center justify-content-between">
+    <h1><i class="bi bi-exclamation-triangle-fill text-warning"></i> Liste des Besoins</h1>
+    <a class="btn btn-primary" href="<?= BASE_URL ?>/besoins/create">
+      <i class="bi bi-plus-circle"></i> Ajouter un besoin
+    </a>
+  </div>
+</div>
+
+<?php if (empty($besoins)): ?>
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Aucun besoin enregistré.
+  </div>
+<?php else: ?>
+  <div class="card">
+    <div class="card-header">
+      <i class="bi bi-list"></i> <?= count($besoins) ?> besoin(s) enregistré(s)
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col"><i class="bi bi-hash"></i> ID</th>
+              <th scope="col"><i class="bi bi-geo-alt"></i> Ville</th>
+              <th scope="col"><i class="bi bi-layers"></i> Catégorie</th>
+              <th scope="col"><i class="bi bi-tag"></i> Type</th>
+              <th scope="col"><i class="bi bi-journal-text"></i> Libellé</th>
+              <th scope="col"><i class="bi bi-calendar-event"></i> Date Besoin</th>
+              <th scope="col"><i class="bi bi-currency-dollar"></i> Prix unitaire</th>
+              <th scope="col"><i class="bi bi-box"></i> Quantité</th>
+              <th scope="col"><i class="bi bi-boxes"></i> Restant</th>
+              <th scope="col" class="text-end"><i class="bi bi-gear"></i> Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($besoins as $besoin):
+              $pourcentage = $besoin->quantity > 0 ? (($besoin->quantity - $besoin->quantity_restante) / $besoin->quantity * 100) : 0;
+              ?>
+              <tr>
+                <td><span class="badge bg-secondary"><?php echo (int) $besoin->id; ?></span></td>
+                <td>
+                  <i class="bi bi-geo-alt-fill text-danger"></i>
+                  <?php echo htmlspecialchars((string) $besoin->ville_nom, ENT_QUOTES, 'UTF-8'); ?>
+                </td>
+                <td>
+                  <?php
+                  $typeLibelle = strtolower($besoin->type_libelle);
+                  $categorieBadge = [
+                    'nature' => '<span class="badge bg-success"><i class="bi bi-tree"></i> Nature</span>',
+                    'materiaux' => '<span class="badge bg-warning text-dark"><i class="bi bi-hammer"></i> Matériaux</span>',
+                    'argent' => '<span class="badge bg-primary"><i class="bi bi-cash-coin"></i> Argent</span>'
+                  ];
+                  echo $categorieBadge[$typeLibelle] ?? '<span class="badge bg-info">' . htmlspecialchars($besoin->type_libelle, ENT_QUOTES, 'UTF-8') . '</span>';
+                  ?>
+                </td>
+                <td><span
+                    class="badge bg-info"><?php echo htmlspecialchars((string) $besoin->type_libelle, ENT_QUOTES, 'UTF-8'); ?></span>
+                </td>
+                <td>
+                  <strong><?php echo htmlspecialchars((string) ($besoin->libelle ?? '-'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                </td>
+                <td>
+                  <small class="text-muted">
+                    <?php echo date('d/m/Y', strtotime($besoin->date_besoin)); ?>
+                  </small>
+                </td>
+                <td>
+                  <?php echo $besoin->prix_unitaire !== null ? number_format((float) $besoin->prix_unitaire, 2, ',', ' ') . ' Ar' : '-'; ?>
+                </td>
+                <td><span class="badge bg-success"><?php echo (int) $besoin->quantity; ?></span></td>
+                <td>
+                  <?php if ($besoin->quantity_restante == 0): ?>
+                    <span class="badge bg-secondary">Satisfait</span>
+                  <?php elseif ($besoin->quantity_restante < $besoin->quantity): ?>
+                    <span class="badge bg-warning text-dark"><?php echo (int) $besoin->quantity_restante; ?>
+                      (<?= round($pourcentage) ?>%)</span>
+                  <?php else: ?>
+                    <span class="badge bg-danger"><?php echo (int) $besoin->quantity_restante; ?></span>
+                  <?php endif; ?>
+                </td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-info" href="<?= BASE_URL ?>/besoins/<?php echo (int) $besoin->id; ?>/edit">
+                    <i class="bi bi-pencil"></i> Modifier
+                  </a>
+                  <form class="d-inline" method="post"
+                    action="<?= BASE_URL ?>/besoins/<?php echo (int) $besoin->id; ?>/delete">
+                    <button class="btn btn-sm btn-danger" type="submit">
+                      <i class="bi bi-trash"></i> Supprimer
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>
 
