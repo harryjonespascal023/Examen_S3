@@ -79,11 +79,20 @@
         <div class="card text-center border-success">
           <div class="card-body">
             <i class="bi bi-arrow-repeat text-success" style="font-size: 3rem;"></i>
-            <form method="POST" action="/dons/dispatch" class="mt-2">
-              <button type="submit" class="btn btn-success btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
-                Dispatch FIFO
-              </button>
-            </form>
+            <div class="d-grid gap-2 mt-2">
+              <form method="POST" action="/dons/dispatch">
+                <input type="hidden" name="mode" value="fifo">
+                <button type="submit" class="btn btn-success btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
+                  Dispatch FIFO
+                </button>
+              </form>
+              <form method="POST" action="/dons/dispatch">
+                <input type="hidden" name="mode" value="proportionnel">
+                <button type="submit" class="btn btn-outline-success btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
+                  Dispatch proportionnel
+                </button>
+              </form>
+            </div>
             <small class="text-muted">Lancer la distribution</small>
           </div>
         </div>
@@ -328,11 +337,20 @@
         style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
         <div class="card-body">
           <i class="bi bi-arrow-repeat" style="font-size: 3rem;"></i>
-          <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="mt-2">
-            <button type="submit" class="btn btn-light btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
-              Dispatch
-            </button>
-          </form>
+          <div class="d-grid gap-2 mt-2">
+            <form method="POST" action="<?= BASE_URL ?>/dons/dispatch">
+              <input type="hidden" name="mode" value="fifo">
+              <button type="submit" class="btn btn-light btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
+                Dispatch FIFO
+              </button>
+            </form>
+            <form method="POST" action="<?= BASE_URL ?>/dons/dispatch">
+              <input type="hidden" name="mode" value="proportionnel">
+              <button type="submit" class="btn btn-outline-light btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
+                Dispatch proportionnel
+              </button>
+            </form>
+          </div>
           <small class="opacity-75">Lancer la distribution</small>
         </div>
       </div>
