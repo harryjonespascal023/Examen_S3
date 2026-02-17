@@ -369,6 +369,115 @@ class DonService
     return $report;
   }
 
+  private function executeDispatchProportionnel(array $besoins, array $dons, bool $isSimulation, array $stats): array
+{
+  $besoinsByLibelle = [];
+  foreach ($besoins as $besoin) {
+    $libelleKey = $this->normalizeLibelleKey($besoin['libelle']);
+    $besoinsByLibelle[$libelleKey][] = $besoin;
+  }
+
+  $donsByLibelle = [];
+  foreach ($dons as $don) {
+    $libelleKey = $this->normalizeLibelleKey($don['libelle']);
+    $donsByLibelle[$libelleKey][] = $don;
+  }
+
+  foreach ($besoinsByLibelle as $libelleKey => $besoinsGroup) {
+    if (empty($donsByLibelle[$libelleKey])) {
+      continue;
+    }
+
+    $totalDonRestant = 0;
+    foreach ($donsByLibelle[$libelleKey] as $don) {
+      $totalDonRestant += (int) $don['quantity_restante'];
+    }
+    if ($totalDonRestant <= 0) {
+      continue;
+    }
+
+    $sumNeeds = 0;
+    foreach ($besoinsGroup as $b) {
+      $sumNeeds += (int) $b['quantity_restante'];
+    }
+    if ($sumNeeds <= 0) {
+      continue;
+    }
+
+    // target_i = floor(totalDonRestant * besoin_i / sumNeeds)
+    $targets = [];
+    foreach ($besoinsGroup as $b) {
+      $need = (int) $b['quantity_restante'];
+      $target = (int) floor(($totalDonRestant * $need) / $sumNeeds);
+      if ($target > $need) {
+        $target = $need;
+      }
+      $targets[(int) $b['id']] = $target;
+    }
+
+    // Consommer les dons FIFO à l'intérieur du groupe (même libellé)
+    $groupDons = &$donsByLibelle[$libelleKey];
+
+    foreach ($besoinsGroup as $besoin) {
+      $besoinId = (int) $besoin['id'];
+      $targetForBesoin = (int) ($targets[$besoinId] ?? 0);
+      if ($targetForBesoin <= 0) {
+        continue;
+      }
+
+      $remaining = $targetForBesoin;
+
+      foreach ($groupDons as &$don) {
+        if ($remaining <= 0) {
+          break;
+        }
+
+        $available = (int) $don['quantity_restante'];
+        if ($available <= 0) {
+          continue;
+        }
+
+        $donId = (int) $don['id'];
+        $qty = min($available, $remaining);
+
+        if (!$isSimulation) {
+          $this->donRepository->insertDispatch($donId, $besoinId, $qty);
+          $this->donRepository->updateQuantityRestanteDon($donId, $qty);
+          $this->donRepository->updateQuantityRestanteBesoin($besoinId, $qty);
+        }
+
+        $don['quantity_restante'] -= $qty;
+        $remaining -= $qty;
+
+        $stats['total_dispatches']++;
+        $stats['total_quantity_dispatched'] += $qty;
+        $stats['details'][] = [
+          'don_id' => $donId,
+          'besoin_id' => $besoinId,
+          'type' => $don['type_libelle'],
+          'libelle' => $don['libelle'] ?? 'Argent',
+          'ville' => $besoin['ville_nom'],
+          'besoin_libelle' => $besoin['libelle'] ?? 'Argent',
+          'besoin_date' => $besoin['date_besoin'],
+          'quantity' => $qty,
+          'don_date' => $don['date_saisie']
+        ];
+
+        if ((int) $don['quantity_restante'] === 0) {
+          $stats['dons_utilises']++;
+        }
+      }
+
+      if ($remaining === 0) {
+        $stats['besoins_satisfaits']++;
+      }
+    }
+  }
+
+  return $stats;
+}
+
+
   public function getDashboardData(): array
   {
     return [
