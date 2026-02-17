@@ -93,9 +93,6 @@ class DonController
     ]);
   }
 
-  /**
-   * Exécute une simulation du dispatch
-   */
   public function simulate()
   {
     try {

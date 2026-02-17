@@ -63,8 +63,7 @@
     </div>
 
     <div class="col-md-6">
-      <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="h-100"
-        onsubmit="return confirm('⚠️ Cette action va réellement dispatcher les dons. Êtes-vous sûr de vouloir continuer ?');">
+      <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="h-100" >
         <div class="card shadow-sm border-0 h-100"
           style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
           <div class="card-body text-center d-flex flex-column justify-content-center">
