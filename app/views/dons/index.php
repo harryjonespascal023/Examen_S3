@@ -53,14 +53,13 @@
     <div class="col-md-3">
       <div class="card text-center border-0 shadow-sm h-100"
         style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
-        <div class="card-body">
-          <i class="bi bi-arrow-repeat" style="font-size: 3rem;"></i>
-          <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="mt-2">
-            <button type="submit" class="btn btn-light btn-lg" <?= $report['dons_non_utilises']['count'] == 0 || $report['besoins_non_satisfaits']['count'] == 0 ? 'disabled' : '' ?>>
-              Dispatch
-            </button>
-          </form>
-          <small class="opacity-75">Lancer la distribution</small>
+        <div class="card-body d-flex flex-column justify-content-center">
+          <i class="bi bi-eye" style="font-size: 3rem;"></i>
+          <h3 class="mt-3">Simulation</h3>
+          <a href="<?= BASE_URL ?>/dons/simulation" class="btn btn-light btn-lg mt-3">
+            <i class="bi bi-play-circle"></i> Accéder
+          </a>
+          <small class="opacity-75 d-block mt-2">Simuler ou valider le dispatch</small>
         </div>
       </div>
     </div>

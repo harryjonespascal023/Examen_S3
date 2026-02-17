@@ -371,5 +371,11 @@ class DonRepository
       'pourcentage_satisfait' => $totalBesoins > 0 ? ($totalSatisfaits / $totalBesoins * 100) : 0
     ];
   }
+
+  public function reinitialiserDispatch()
+  {
+      $sql = $this->db->prepare("TRUNCATE TABLE BNR_dispatch");
+      $sql->execute();
+  }
 }
 

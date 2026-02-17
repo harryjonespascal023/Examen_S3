@@ -282,8 +282,8 @@
     const simulateMode = document.getElementById('simulate_mode');
     const validateMode = document.getElementById('validate_mode');
 
-    modeSelect.addEventListener('change', function () {
-      const selectedMode = this.value;
+    function updateMode() {
+      const selectedMode = modeSelect.value;
 
       // Mettre à jour les champs cachés des formulaires
       simulateMode.value = selectedMode;
@@ -295,7 +295,15 @@
       } else if (selectedMode === 'quantity') {
         modeLabel.textContent = 'Mode Quantité Croissante';
       }
-    });
+
+      console.log('Mode mis à jour:', selectedMode, '| Simulate:', simulateMode.value, '| Validate:', validateMode.value);
+    }
+
+    // Initialiser au chargement de la page
+    updateMode();
+
+    // Mettre à jour quand l'utilisateur change le mode
+    modeSelect.addEventListener('change', updateMode);
   });
 </script>
 
