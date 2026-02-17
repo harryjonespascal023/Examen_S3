@@ -65,9 +65,12 @@ class DonController
   public function dispatchForm()
   {
     try {
-      $stats = $this->donService->dispatchDons();
+      $mode = Flight::request()->data->mode ?? 'date';
+      $stats = $this->donService->dispatchDons($mode);
+      $modeLabel = $mode === 'quantity' ? 'quantité croissante' : 'date (FIFO)';
       $message = sprintf(
-        'Dispatch réussi: %d dispatches, %d unités dispatchées, %d besoins satisfaits',
+        'Dispatch réussi (%s): %d dispatches, %d unités dispatchées, %d besoins satisfaits',
+        $modeLabel,
         $stats['total_dispatches'],
         $stats['total_quantity_dispatched'],
         $stats['besoins_satisfaits']
@@ -96,7 +99,8 @@ class DonController
   public function simulate()
   {
     try {
-      $stats = $this->donService->simulateDispatch();
+      $mode = Flight::request()->data->mode ?? 'date';
+      $stats = $this->donService->simulateDispatch($mode);
 
       Flight::render('dons/simulation', [
         'message' => 'Simulation terminée avec succès',

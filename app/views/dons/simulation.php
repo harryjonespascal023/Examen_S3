@@ -36,9 +36,45 @@
               de données.</li>
           </ul>
           <div class="alert alert-info mb-0">
-            <i class="bi bi-info-circle"></i> <strong>Logique FIFO :</strong> Les besoins les plus anciens (date_besoin)
-            sont satisfaits en premier.
-            Les dons sont distribués automatiquement aux villes selon l'ordre d'ancienneté de leurs besoins.
+            <i class="bi bi-lightbulb"></i> <strong>Modes de dispatch :</strong>
+            <ul class="mb-0 mt-2">
+              <li><strong>Par date (FIFO) :</strong> Les besoins les plus anciens sont satisfaits en premier, avec les dons les plus anciens</li>
+              <li><strong>Par quantité croissante :</strong> Les petits besoins ET les petits dons sont prioritaires</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sélecteur de mode de dispatch -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-gear"></i> Mode de Dispatch
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <label for="dispatch_mode" class="form-label fw-bold">Choisissez le mode de dispatch :</label>
+              <select class="form-select form-select-lg" id="dispatch_mode" name="mode">
+                <option value="date" selected>
+                  📅 Par date (FIFO) - Besoins les plus anciens en premier
+                </option>
+                <option value="quantity">
+                  📊 Par quantité croissante - Petits besoins en premier
+                </option>
+              </select>
+            </div>
+            <div class="col-md-4 text-center">
+              <div class="badge bg-primary fs-6 py-3 px-4">
+                <i class="bi bi-arrow-down-up"></i>
+                <span id="mode_label">Mode FIFO</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -48,6 +84,7 @@
   <div class="row mb-4">
     <div class="col-md-6">
       <form method="POST" action="<?= BASE_URL ?>/dons/simulation/simulate" class="h-100">
+        <input type="hidden" name="mode" id="simulate_mode" value="date">
         <div class="card shadow-sm border-0 h-100"
           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
           <div class="card-body text-center d-flex flex-column justify-content-center">
@@ -63,7 +100,8 @@
     </div>
 
     <div class="col-md-6">
-      <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="h-100" >
+      <form method="POST" action="<?= BASE_URL ?>/dons/dispatch" class="h-100">
+        <input type="hidden" name="mode" id="validate_mode" value="date">
         <div class="card shadow-sm border-0 h-100"
           style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
           <div class="card-body text-center d-flex flex-column justify-content-center">
@@ -83,10 +121,18 @@
     <div class="row mb-4">
       <div class="col-md-12">
         <div class="card shadow-sm border-0">
-          <div class="card-header bg-success text-white">
+          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
               <i class="bi bi-clipboard-check"></i> Résultats de la Simulation
             </h5>
+            <span class="badge bg-light text-dark fs-6">
+              <?php
+              $modeLabel = isset($simulationResult['mode']) && $simulationResult['mode'] === 'quantity'
+                ? '📊 Mode: Quantité Croissante'
+                : '📅 Mode: Date (FIFO)';
+              echo $modeLabel;
+              ?>
+            </span>
           </div>
           <div class="card-body">
             <div class="row g-3 mb-4">
@@ -206,24 +252,52 @@
           <p class="mb-2"><strong>Qu'est-ce qu'un dispatch ?</strong></p>
           <p class="mb-3">
             Le dispatch consiste à attribuer automatiquement les dons disponibles aux besoins non satisfaits
-            selon l'algorithme <strong>FIFO par date de besoin</strong>.
+            selon le mode choisi.
           </p>
           <p class="mb-2"><strong>Comment ça fonctionne ?</strong></p>
           <ol class="mb-2">
             <li>Les dons sont enregistrés par type (eau, riz, argent, etc.) sans préciser la destination</li>
-            <li>Les besoins sont triés par date (les plus anciens en premier)</li>
-            <li>Le dispatch distribue les dons aux besoins les plus anciens de chaque type</li>
-            <li>Exemple : 200 kg de riz → Ville B (besoin du 10/02) reçoit avant Ville A (besoin du 15/02)</li>
+            <li><strong>Mode par date (FIFO) :</strong> Besoins triés par date (plus anciens en premier), dons triés par date de saisie</li>
+            <li><strong>Mode par quantité croissante :</strong> Besoins ET dons triés par quantité restante (plus petits en premier)</li>
+            <li>Le dispatch distribue les dons selon le mode sélectionné</li>
+            <li><strong>Exemple mode date :</strong> 200 kg de riz → Ville B (besoin du 10/02) reçoit le don du 05/02 en priorité</li>
+            <li><strong>Exemple mode quantité :</strong> 200 kg de riz → Ville A (50 kg restants) reçoit un petit don (30 kg) en priorité</li>
           </ol>
           <p class="mb-0 text-primary">
-            <i class="bi bi-star-fill"></i> <strong>Priorité à l'ancienneté :</strong> Plus un besoin est ancien, plus
-            il sera satisfait rapidement lors du dispatch.
+            <i class="bi bi-star-fill"></i> <strong>Conseil :</strong> Utilisez le mode <strong>par date</strong> pour
+            respecter l'ordre chronologique (équitable),
+            ou le mode <strong>par quantité</strong> pour maximiser le nombre de besoins complètement satisfaits (efficace).
           </p>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  // Synchronisation du mode de dispatch entre le sélecteur et les formulaires
+  document.addEventListener('DOMContentLoaded', function () {
+    const modeSelect = document.getElementById('dispatch_mode');
+    const modeLabel = document.getElementById('mode_label');
+    const simulateMode = document.getElementById('simulate_mode');
+    const validateMode = document.getElementById('validate_mode');
+
+    modeSelect.addEventListener('change', function () {
+      const selectedMode = this.value;
+
+      // Mettre à jour les champs cachés des formulaires
+      simulateMode.value = selectedMode;
+      validateMode.value = selectedMode;
+
+      // Mettre à jour le badge d'affichage
+      if (selectedMode === 'date') {
+        modeLabel.textContent = 'Mode FIFO';
+      } else if (selectedMode === 'quantity') {
+        modeLabel.textContent = 'Mode Quantité Croissante';
+      }
+    });
+  });
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 

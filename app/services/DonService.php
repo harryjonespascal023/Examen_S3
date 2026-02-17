@@ -3,6 +3,7 @@
 namespace app\services;
 
 use app\repository\DonRepository;
+use Exception;
 
 class DonService
 {
@@ -28,28 +29,36 @@ class DonService
     return $this->donRepository->getAllTypesBesoinForDonForm();
   }
 
-  public function dispatchDons()
+  public function dispatchDons(string $mode = 'date')
   {
-    return $this->executeDispatch(false); // Exécution réelle
+    if ($mode === 'quantity') {
+      return $this->executeDispatchByQuantity(false);
+    }
+    return $this->executeDispatchByDate(false); // Mode par défaut: FIFO par date
   }
 
   /**
    * Simule le dispatch des dons sans enregistrer dans la base de données
    */
-  public function simulateDispatch()
+  public function simulateDispatch(string $mode = 'date')
   {
-    return $this->executeDispatch(true); // Simulation
+    if ($mode === 'quantity') {
+      return $this->executeDispatchByQuantity(true);
+    }
+    return $this->executeDispatchByDate(true); // Mode par défaut: FIFO par date
   }
 
   /**
-   * Exécute ou simule le dispatch des dons
+   * Exécute ou simule le dispatch des dons en mode FIFO par date
    * LOGIQUE:
-   * - Les besoins les plus anciens (date_besoin) reçoivent en premier (FIFO)
    * - Les dons sont matchés par libellé exact avec les besoins (ex: don "Riz" → besoin "Riz")
    * - Pour l'argent, libelle = NULL pour les deux
+   * - Besoins triés par date_besoin ASC (ordre chronologique)
+   * - Dons triés par date_saisie ASC (FIFO)
+   *
    * @param bool $isSimulation Si true, ne fait qu'une simulation sans modification de la BDD
    */
-  private function executeDispatch(bool $isSimulation = false)
+  private function executeDispatchByDate(bool $isSimulation = false)
   {
     $stats = [
       'total_dispatches' => 0,
@@ -57,10 +66,11 @@ class DonService
       'besoins_satisfaits' => 0,
       'dons_utilises' => 0,
       'details' => [],
+      'mode' => 'date'
     ];
 
     try {
-      // 1. Récupérer les besoins non satisfaits (triés par date_besoin ASC - les plus anciens en premier)
+      // 1. Récupérer les besoins non satisfaits (triés par date_besoin ASC)
       $besoins = $this->donRepository->getBesoinsNonSatisfaits();
 
       // 2. Récupérer les dons non utilisés totalement (triés FIFO par date de saisie)
@@ -78,7 +88,7 @@ class DonService
         $donsByLibelle[$libelleKey][] = $don;
       }
 
-      // 4. Algorithme FIFO : traiter chaque besoin (du plus ancien au plus récent)
+      // 4. Algorithme : traiter chaque besoin selon l'ordre défini
       foreach ($besoins as $besoin) {
         $besoinId = $besoin['id'];
         $besoinLibelle = $besoin['libelle'];
@@ -159,33 +169,50 @@ class DonService
     }
   }
 
-  private function executeDispatcCroissant(){
+  /**
+   * Exécute ou simule le dispatch des dons en mode quantité croissante
+   * LOGIQUE:
+   * - Les dons sont matchés par libellé exact avec les besoins (ex: don "Riz" → besoin "Riz")
+   * - Pour l'argent, libelle = NULL pour les deux
+   * - Besoins triés par quantity_restante ASC (les plus petits besoins en premier)
+   * - Dons triés par quantity_restante ASC (les plus petits dons en premier)
+   *
+   * @param bool $isSimulation Si true, ne fait qu'une simulation sans modification de la BDD
+   */
+  private function executeDispatchByQuantity(bool $isSimulation = false)
+  {
     $stats = [
       'total_dispatches' => 0,
       'total_quantity_dispatched' => 0,
       'besoins_satisfaits' => 0,
       'dons_utilises' => 0,
       'details' => [],
+      'mode' => 'quantity'
     ];
 
     try {
+      // 1. Récupérer les besoins non satisfaits
       $besoins = $this->donRepository->getBesoinsNonSatisfaits();
-      $dons = $this->donRepository->getDonsNonUtilises();
 
+      // Trier par quantity_restante ASC (les plus petits besoins en premier)
       usort($besoins, function ($a, $b) {
         $cmp = $a['quantity_restante'] <=> $b['quantity_restante'];
-        if ($cmp !== 0) {
+        if ($cmp !== 0)
           return $cmp;
-        }
+        // En cas d'égalité, trier par date puis par ID
         $cmp = strcmp($a['date_besoin'], $b['date_besoin']);
-        if ($cmp !== 0) {
+        if ($cmp !== 0)
           return $cmp;
-        }
         return $a['id'] <=> $b['id'];
       });
 
+      // 2. Récupérer les dons non utilisés totalement
+      $dons = $this->donRepository->getDonsNonUtilises();
+
+      // 3. Grouper les dons par libellé (case-insensitive) pour un accès rapide
       $donsByLibelle = [];
       foreach ($dons as $don) {
+        // Normaliser le libellé (lowercase, trim)
         $libelleKey = $don['libelle'] === null ? '__ARGENT__' : strtolower(trim($don['libelle']));
 
         if (!isset($donsByLibelle[$libelleKey])) {
@@ -194,54 +221,69 @@ class DonService
         $donsByLibelle[$libelleKey][] = $don;
       }
 
+      // Trier chaque groupe de dons par quantité croissante
       foreach ($donsByLibelle as $libelleKey => $donsList) {
         usort($donsList, function ($a, $b) {
           $cmp = $a['quantity_restante'] <=> $b['quantity_restante'];
-          if ($cmp !== 0) {
+          if ($cmp !== 0)
             return $cmp;
-          }
+          // En cas d'égalité, trier par date puis par ID
           $cmp = strcmp($a['date_saisie'], $b['date_saisie']);
-          if ($cmp !== 0) {
+          if ($cmp !== 0)
             return $cmp;
-          }
           return $a['id'] <=> $b['id'];
         });
         $donsByLibelle[$libelleKey] = $donsList;
       }
 
+      // 4. Algorithme : traiter chaque besoin selon l'ordre défini
       foreach ($besoins as $besoin) {
         $besoinId = $besoin['id'];
         $besoinLibelle = $besoin['libelle'];
         $quantityNeed = $besoin['quantity_restante'];
 
+        // Normaliser le libellé du besoin
         $libelleKey = $besoinLibelle === null ? '__ARGENT__' : strtolower(trim($besoinLibelle));
 
+        // Vérifier s'il existe des dons pour ce libellé exact
         if (!isset($donsByLibelle[$libelleKey]) || empty($donsByLibelle[$libelleKey])) {
           continue;
         }
 
+        // Variable pour suivre la progression
         $quantityRemaining = $quantityNeed;
 
+        // 5. Dispatcher les dons jusqu'à satisfaction du besoin
         foreach ($donsByLibelle[$libelleKey] as &$don) {
           if ($quantityRemaining <= 0) {
-            break;
+            break; // Le besoin est complètement satisfait
           }
 
           if ($don['quantity_restante'] <= 0) {
-            continue;
+            continue; // Ce don est épuisé, passer au suivant
           }
 
           $donId = $don['id'];
           $quantityAvailable = $don['quantity_restante'];
+
+          // Calculer la quantité à dispatcher
           $quantityToDispatch = min($quantityAvailable, $quantityRemaining);
 
-          $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
-          $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
-          $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
+          // 6. Si ce n'est pas une simulation, enregistrer dans la base de données
+          if (!$isSimulation) {
+            // Insertion dans la table dispatch
+            $this->donRepository->insertDispatch($donId, $besoinId, $quantityToDispatch);
 
+            // Mise à jour des quantités restantes
+            $this->donRepository->updateQuantityRestanteDon($donId, $quantityToDispatch);
+            $this->donRepository->updateQuantityRestanteBesoin($besoinId, $quantityToDispatch);
+          }
+
+          // Mettre à jour les variables locales
           $don['quantity_restante'] -= $quantityToDispatch;
           $quantityRemaining -= $quantityToDispatch;
 
+          // Enregistrer les statistiques
           $stats['total_dispatches']++;
           $stats['total_quantity_dispatched'] += $quantityToDispatch;
           $stats['details'][] = [
@@ -256,19 +298,22 @@ class DonService
             'don_date' => $don['date_saisie']
           ];
 
+          // Compter les dons totalement utilisés
           if ($don['quantity_restante'] == 0) {
             $stats['dons_utilises']++;
           }
         }
 
+        // Compter les besoins totalement satisfaits
         if ($quantityRemaining == 0) {
           $stats['besoins_satisfaits']++;
         }
       }
 
       return $stats;
+
     } catch (Exception $e) {
-      throw new Exception("Erreur lors du dispatch croissant : " . $e->getMessage());
+      throw new Exception("Erreur lors du dispatch par quantité : " . $e->getMessage());
     }
   }
 
