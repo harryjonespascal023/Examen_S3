@@ -135,7 +135,7 @@
                       </td>
                       <td class="text-end">
                         <span class="badge bg-success fs-6">
-                          <?= $dispatch['quantity'] ?>     <?= ($dispatch['don_libelle'] ?? false) ? 'unités' : '€' ?>
+                          <?= $dispatch['quantity'] ?>     <?= ($dispatch['don_libelle'] ?? false) ? 'unités' : 'Ar' ?>
                         </span>
                       </td>
                     </tr>

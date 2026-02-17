@@ -199,7 +199,7 @@
                     </div>
                     <span class="badge rounded-pill fs-6"
                       style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                      <?= $besoin['quantity_restante'] ?>     <?= $besoin['prix_unitaire'] === null ? '€' : 'unités' ?>
+                      <?= $besoin['quantity_restante'] ?>     <?= $besoin['prix_unitaire'] === null ? 'Ar' : 'unités' ?>
                     </span>
                   </div>
                 </div>
@@ -238,7 +238,7 @@
                     </div>
                     <span class="badge rounded-pill fs-6"
                       style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                      <?= $don['quantity_restante'] ?>     <?= $don['libelle'] ? 'unités' : '€' ?>
+                      <?= $don['quantity_restante'] ?>     <?= $don['libelle'] ? 'unités' : 'Ar' ?>
                     </span>
                   </div>
                 </div>

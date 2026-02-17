@@ -169,7 +169,7 @@
                         </td>
                         <td class="text-center">
                           <span class="badge bg-primary"><?= $detail['quantity'] ?>
-                            <?= $detail['libelle'] === 'Argent' ? '€' : 'unités' ?></span>
+                            <?= $detail['libelle'] === 'Argent' ? 'Ar' : 'unités' ?></span>
                         </td>
                         <td class="text-muted small"><?= date('d/m/Y', strtotime($detail['don_date'])) ?></td>
                       </tr>
